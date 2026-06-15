@@ -44,4 +44,49 @@ describe("scoreEntropy", () => {
     });
     expect(s.commitEntropy).toBeLessThanOrEqual(1);
   });
+
+  it("raises commit entropy by 0.20 for a single high-severity riskFlag", () => {
+    const s = scoreEntropy({
+      ...empty,
+      riskFlags: [{ id: "r1", kind: "x", severity: "high" }],
+    });
+    expect(s.commitEntropy).toBeCloseTo(0.20, 5);
+  });
+
+  it("raises commit entropy by 0.15 for a single ambiguous policyFlag", () => {
+    const s = scoreEntropy({
+      ...empty,
+      policyFlags: [{ id: "p1", rule: "x", ambiguous: true }],
+    });
+    expect(s.commitEntropy).toBeCloseTo(0.15, 5);
+  });
+
+  it("raises commit entropy by 0.10 for a single staleMemoryRef", () => {
+    const s = scoreEntropy({
+      ...empty,
+      staleMemoryRefs: ["m1"],
+    });
+    expect(s.commitEntropy).toBeCloseTo(0.10, 5);
+  });
+
+  it("raises commit entropy by 0.05 for a single toolFailure", () => {
+    const s = scoreEntropy({
+      ...empty,
+      toolFailures: ["t1"],
+    });
+    expect(s.commitEntropy).toBeCloseTo(0.05, 5);
+  });
+
+  it("returns commitEntropy of 1.0 when all six factors are maxed", () => {
+    const s = scoreEntropy({
+      ...empty,
+      missingFields: [{ id: "m1", name: "sku", necessity: "required" }],
+      claims: [{ id: "c1", text: "price 100", evidencePointer: null }],
+      riskFlags: [{ id: "r1", kind: "x", severity: "high" }],
+      policyFlags: [{ id: "p1", rule: "x", ambiguous: true }],
+      staleMemoryRefs: ["m1"],
+      toolFailures: ["t1"],
+    });
+    expect(s.commitEntropy).toBeCloseTo(1.0, 5);
+  });
 });
