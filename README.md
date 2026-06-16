@@ -112,6 +112,39 @@ deployment proof is recorded in [`docs/deployment-proof.md`](docs/deployment-pro
 
 ---
 
+### Latent loop + dashboard (Plan 3)
+
+- **Latent-state extractor** (`apps/api/src/latent/extract.ts`): `extractLatentState(provider, { request, workflowVersion, goal })` calls Qwen via `generateStructured` for structured state (facts, missing fields, claims). `goal` and `workflowVersion` are always set by code — never from the model.
+- **Run-loop scaffold** (`apps/api/src/latent/loop.ts`): `runLatentLoop` async generator (extract → `scoreEntropy` → emit `EntropyUpdate` frames). `demoEntropySequence()` is a deterministic canonical demo producing commit entropy ≈0.82 → ≈0.44 → ≈0.18 using `scoreEntropy` on real `LatentWorkflowState` objects — no hardcoded numbers.
+- **SSE routes** added to `apps/api`:
+  - `POST /runs/stream` — streams `EntropyUpdate` frames for a real request via `runLatentLoop`.
+  - `GET /demo/entropy-stream?paceMs=<ms>` — streams the canonical demo sequence (default 350ms between frames; pass `paceMs=0` for instant).
+  - Both emit `event: entropy` with JSON payloads validated by `EntropyUpdateSchema`.
+- **`@clarityloop/core` additions**: `EntropyUpdateSchema` / `EntropyUpdate` (the SSE frame contract, zod-validated on both ends). `EntropyScoreSchema` was already in `trace.ts` and is re-exported.
+- **Dashboard** (`apps/web`): Vite 5 + React 18 + TypeScript + Tailwind CSS SPA.
+  - `useEntropyStream(url)` — EventSource hook that accumulates `EntropyUpdate` frames and closes on `phase === "done"`.
+  - `EntropyHeatmap` — hero visual: six entropy components as color cells + commit-entropy history sparkline.
+  - Panels: Input Request (with Run button), Generated Workflow, Next Best Action, Trace.
+  - Shared types imported directly from `@clarityloop/core` via Vite alias (no separate build step).
+
+#### Running the dashboard locally
+
+```bash
+# Terminal 1 — API (entropy stream source)
+export DASHSCOPE_API_KEY=...
+pnpm --filter @clarityloop/api dev        # :8080
+
+# Terminal 2 — Dashboard (Vite dev server with proxy to :8080)
+pnpm --filter @clarityloop/web dev        # :5173
+# Open http://localhost:5173 → click "Run ClarityLoop" to stream the canonical demo
+```
+
+The dashboard calls `GET /demo/entropy-stream` (no Qwen key needed for the demo). For the real loop (`POST /runs/stream`) set `DASHSCOPE_API_KEY`.
+
+See [`docs/architecture.md`](docs/architecture.md) for the full architecture reference.
+
+---
+
 ## License
 
 See [`LICENSE`](LICENSE).
