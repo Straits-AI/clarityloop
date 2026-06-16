@@ -4,3 +4,4 @@ export * from "./repository";
 export * from "./in-memory-repository";
 export * from "./pg-repository";
 export * from "./schema-sql";
+export * from "./memory-repository";
