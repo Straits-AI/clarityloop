@@ -11,3 +11,5 @@ export * from "./gates";
 export * from "./trace";
 export * from "./procedure";
 export * from "./stream";
+export * from "./action-score";
+export * from "./memory";
