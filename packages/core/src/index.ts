@@ -8,3 +8,4 @@ export * from "./governance";
 export * from "./workflow-validate";
 export * from "./actions";
 export * from "./gates";
+export * from "./trace";
