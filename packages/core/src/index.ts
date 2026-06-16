@@ -10,3 +10,4 @@ export * from "./actions";
 export * from "./gates";
 export * from "./trace";
 export * from "./procedure";
+export * from "./stream";
