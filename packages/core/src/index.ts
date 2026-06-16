@@ -3,3 +3,4 @@ export * from "./schemas";
 export * from "./types";
 export * from "./entropy";
 export * from "./primitives";
+export * from "./workflow";
