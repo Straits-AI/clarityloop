@@ -145,6 +145,23 @@ See [`docs/architecture.md`](docs/architecture.md) for the full architecture ref
 
 ---
 
+### Tools & next-best-action loop (Plan 4)
+
+`@clarityloop/tools` provides six tools behind a uniform `Tool` interface
+(`retrieve_memory`, `lookup_catalog`, `check_stock`, `parse_supplier_quote`,
+`compare_quote`, `draft_quote`). Read-only/draft tools are fixture-backed and
+deterministic; `parse_supplier_quote` uses Qwen-VL via `generateStructured`.
+
+The loop controller (`apps/api/src/loop/controller.ts`) runs the entropy-aware
+loop: Qwen proposes candidate actions (structure only), deterministic code scores
+them (`scoreAction`/`selectNextBestAction` in `@clarityloop/core`), the argmax tool
+runs, its result is folded into the latent state, and `scoreEntropy` re-scores —
+repeating until `commitEntropy < threshold`, no useful action remains, the budget
+is exhausted, or the authority boundary requires approval. Each iteration emits the
+Plan 3 `EntropyUpdate` SSE frame, so the heatmap animates `0.60 → 0.50 → 0.25` live.
+
+---
+
 ## License
 
 See [`LICENSE`](LICENSE).
