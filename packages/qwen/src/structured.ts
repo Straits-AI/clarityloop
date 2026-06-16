@@ -13,7 +13,7 @@ export function extractJson(raw: string): unknown {
 
 export async function generateStructured<T>(
   provider: ModelProvider,
-  schema: z.ZodType<T>,
+  schema: z.ZodType<T, any, any>,
   args: { task: QwenTask; messages: ChatMessage[] },
 ): Promise<T> {
   const reply = await provider.complete(args.messages, { task: args.task });

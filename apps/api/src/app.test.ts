@@ -1,20 +1,26 @@
 import { describe, it, expect } from "vitest";
 import { createApp } from "./app";
+import { InMemoryRunRepository } from "@clarityloop/storage";
 import type { ModelProvider } from "@clarityloop/qwen";
 
 const fakeProvider: ModelProvider = { async complete() { return "ok"; } };
 
+const makeApp = () =>
+  createApp({
+    provider: fakeProvider,
+    runs: new InMemoryRunRepository(),
+    allowedTools: ["retrieve_memory", "lookup_catalog", "check_stock", "parse_supplier_quote", "compare_quote", "draft_quote"],
+  });
+
 describe("api app", () => {
   it("GET /health returns ok", async () => {
-    const app = createApp({ provider: fakeProvider });
-    const res = await app.request("/health");
+    const res = await makeApp().request("/health");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ status: "ok" });
   });
 
   it("POST /score computes commit entropy deterministically", async () => {
-    const app = createApp({ provider: fakeProvider });
-    const res = await app.request("/score", {
+    const res = await makeApp().request("/score", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
