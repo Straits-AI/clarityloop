@@ -104,6 +104,14 @@ deployment proof is recorded in [`docs/deployment-proof.md`](docs/deployment-pro
 
 ---
 
+### Workflow generation + persistence (Plan 2)
+
+- **Qwen Workflow Designer** (`apps/api/src/workflow-designer.ts`): `designWorkflow(provider, { request, domain, allowedTools })` calls `generateStructured` with `WorkflowSpecSchema`, then `assertWorkflowToolsAuthorized` (deterministic, `@clarityloop/core`) **rejects any tool not in the allow-list** — the model proposes, code decides.
+- **`POST /workflow`**: body `{ "request": string, "domain"?: WorkflowDomain }` → generates, validates, and persists a `RunRecord` with the `WorkflowSpec`; returns `{ runId, workflowSpec }`. Unauthorized tools → `422 { error: "unauthorized_tool", unauthorizedTools }`.
+- **Persistence** (`@clarityloop/storage`): repository-pattern `RunRepository` / `TraceRepository` / `ProcedureVersionRepository`, each with an `InMemory*` (tests) and a `Pg*` (deployed, `pg`) implementation. Structures are stored as Postgres `jsonb`; `runId`/`domain`/`name`/`procedure_version_id` are promoted to indexed columns. Schema init: `packages/storage/sql/001_init.sql` (mirrored in `INIT_SQL`, run at API boot).
+
+---
+
 ## License
 
 See [`LICENSE`](LICENSE).
