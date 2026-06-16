@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}
+      DATABASE_URL: postgres://clarityloop:clarityloop@db:5432/clarityloop
+      PORT: "8080"
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: clarityloop
+      POSTGRES_PASSWORD: clarityloop
+      POSTGRES_DB: clarityloop
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
