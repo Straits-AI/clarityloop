@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
@@ -32,7 +33,7 @@ export function createApp(deps: AppDeps) {
     "retrieve_memory", "lookup_catalog", "check_stock",
     "parse_supplier_quote", "compare_quote", "draft_quote",
   ];
-  const newId = deps.newId ?? (() => `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+  const newId = deps.newId ?? (() => `run_${randomUUID()}`);
 
   app.use("*", cors()); // dashboard may be served from a different origin (OSS static hosting)
 
