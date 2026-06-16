@@ -4,3 +4,5 @@ export * from "./types";
 export * from "./entropy";
 export * from "./primitives";
 export * from "./workflow";
+export * from "./governance";
+export * from "./workflow-validate";
