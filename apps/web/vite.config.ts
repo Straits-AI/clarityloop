@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@clarityloop/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url)),
+      "@clarityloop/evals": fileURLToPath(new URL("../../packages/evals/src/index.ts", import.meta.url)),
+      "@clarityloop/qwen": fileURLToPath(new URL("../../packages/qwen/src/index.ts", import.meta.url)),
     },
   },
   server: {
@@ -17,5 +19,12 @@ export default defineConfig({
       "/qwen": "http://localhost:8080",
     },
   },
-  build: { outDir: "dist" },
+  build: {
+    outDir: "dist",
+    rollupOptions: {
+      // Node built-ins are used by the evals CLI/report writer — mark external so the
+      // browser bundle never tries to load them (tree-shaking eliminates the call sites).
+      external: (id) => id.startsWith("node:"),
+    },
+  },
 });
