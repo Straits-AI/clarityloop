@@ -32,6 +32,9 @@ importers:
       '@clarityloop/tools':
         specifier: workspace:*
         version: link:../../packages/tools
+      '@clarityloop/verifiers':
+        specifier: workspace:*
+        version: link:../../packages/verifiers
       '@hono/node-server':
         specifier: ^1.12.0
         version: 1.19.14(hono@4.12.25)
@@ -142,6 +145,15 @@ importers:
       '@clarityloop/storage':
         specifier: workspace:*
         version: link:../storage
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+
+  packages/verifiers:
+    dependencies:
+      '@clarityloop/core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: ^3.23.0
         version: 3.25.76
