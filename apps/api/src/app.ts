@@ -13,6 +13,8 @@ import { InMemoryRunRepository } from "@clarityloop/storage";
 import { designWorkflow } from "./workflow-designer";
 import { LatentExtractionInputSchema, type LatentExtractionInput } from "./latent/extract";
 import { runLatentLoop, demoEntropySequence } from "./latent/loop";
+import { registerCommitRoutes } from "./commit-route";
+import { registerApprovalRoutes } from "./approval-route";
 
 export type AppDeps = {
   provider: ModelProvider;
@@ -103,6 +105,9 @@ export function createApp(deps: AppDeps) {
       }
     });
   });
+
+  registerCommitRoutes(app, deps.provider);
+  registerApprovalRoutes(app);
 
   return app;
 }
