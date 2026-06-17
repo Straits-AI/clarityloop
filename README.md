@@ -200,6 +200,24 @@ All logic is deterministic except the Qwen `WorkflowPatch` proposal; all tests u
 
 ---
 
+## Benchmark & Demo
+
+ClarityLoopBench (`packages/evals`) seeds 36 cases across customer-quote and supplier-comparison and
+scores four baselines — Bare Qwen, Dynamic Qwen Workflow, Fixed Gate, ClarityLoop — on false-commit
+rate, safe completion rate, constraint tax, safety gain, approval burden, and evidence coverage.
+
+Run it offline (deterministic, no API key needed):
+
+```bash
+pnpm --filter @clarityloop/evals bench
+```
+
+Outputs `packages/evals/reports/report.json` and `report.md`. The `apps/web` dashboard renders the
+three-column demo (Baseline | ClarityLoop | Promotion benchmark). Architecture: `docs/architecture.md`.
+Submission write-up: `DEVPOST.md`. Demo script: `docs/demo-video-script.md`.
+
+---
+
 ## License
 
 See [`LICENSE`](LICENSE).
