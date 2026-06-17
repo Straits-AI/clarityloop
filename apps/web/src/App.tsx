@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { EntropyScore } from "@clarityloop/core";
 import { useEntropyStream } from "./hooks/useEntropyStream";
 import { EntropyHeatmap } from "./components/EntropyHeatmap";
@@ -9,6 +9,9 @@ import { TraceView } from "./components/TraceView";
 import { ReplayBenchmarkPanel } from "./components/ReplayBenchmarkPanel";
 import { VersionLineagePanel } from "./components/VersionLineagePanel";
 import { DEMO_PROMOTION_DECISION, DEMO_PROMOTION_REPORT, DEMO_VERSIONS } from "./lib/promotion-demo";
+import { ThreeColumnDemo } from "./demo/ThreeColumnDemo";
+import { buildDemoViewModel, type DemoViewModel } from "./demo/demoViewModel";
+import { ALL_CASES, runBenchAndScore, runPromotionComparison, DeterministicProvider } from "@clarityloop/evals";
 
 const ZERO_ENTROPY: EntropyScore = {
   taskEntropy: 0, evidenceEntropy: 0, actionEntropy: 0,
@@ -23,6 +26,18 @@ const DEMO_WORKFLOW = [
   { id: "s5", name: "draft_quote" },
   { id: "s6", name: "commit_gate" },
 ];
+
+export function BenchmarkPanel() {
+  const [vm, setVm] = useState<DemoViewModel | null>(null);
+  useEffect(() => {
+    const provider = new DeterministicProvider();
+    Promise.all([runBenchAndScore(ALL_CASES, provider), runPromotionComparison(ALL_CASES, provider)]).then(
+      ([{ report }, promotion]) => setVm(buildDemoViewModel(report, promotion)),
+    );
+  }, []);
+  if (!vm) return <p>Running ClarityLoopBench…</p>;
+  return <ThreeColumnDemo viewModel={vm} />;
+}
 
 export default function App() {
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
@@ -55,6 +70,10 @@ export default function App() {
           <ReplayBenchmarkPanel report={DEMO_PROMOTION_REPORT} decision={DEMO_PROMOTION_DECISION} />
           <VersionLineagePanel versions={DEMO_VERSIONS} />
         </div>
+      </section>
+      <section className="mt-6">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Benchmark</h2>
+        <BenchmarkPanel />
       </section>
     </main>
   );
