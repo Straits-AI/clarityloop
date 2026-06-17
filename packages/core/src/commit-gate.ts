@@ -66,12 +66,38 @@ export function runCommitGate(input: CommitGateInput): CommitDecision {
     };
   }
 
-  // 4. Needs approval — risk above the auto-commit ceiling, an approval-trigger 'warn',
-  //    residual commit entropy at/above threshold, or auto-commit disabled by policy.
+  // 4. Needs approval — risk above the auto-commit ceiling, an authority-boundary action
+  //    category that always needs approval, evidence coverage below the commit/approval minimum,
+  //    an approval-trigger 'warn', residual commit entropy at/above threshold, or auto-commit
+  //    disabled by policy.
   const reasons: string[] = [];
   if (RISK_ORDER[riskClass] > RISK_ORDER[authorityBoundary.autoCommitMaxRiskClass]) {
     reasons.push(`risk ${riskClass} exceeds auto-commit ceiling ${authorityBoundary.autoCommitMaxRiskClass}`);
   }
+
+  // Authority boundary (memo §17): actions in approvalRequiredFor ALWAYS require human approval,
+  // regardless of entropy or the auto-commit risk ceiling. Each active category is surfaced (by a
+  // verifier / the orchestrator) as a Check whose `name` equals the category.
+  const alwaysApproval = new Set<string>(authorityBoundary.approvalRequiredFor);
+  for (const c of checks) {
+    if (!c.passed && alwaysApproval.has(c.name)) {
+      reasons.push(`authority boundary always requires approval for "${c.name}"`);
+    }
+  }
+
+  // Evidence coverage gate: a blocking evidence_coverage_threshold failure (coverage below the
+  // workflow's minimumCoverageForCommit) or the numeric coverage below the policy's approval
+  // threshold routes to a human rather than committing on entropy alone.
+  if (blocking.some((c) => c.verifier === "evidence_coverage")) {
+    reasons.push("evidence coverage below the required minimum for commit");
+  }
+  const coverageApprovalBelow = commitPolicy.requireApprovalIf.evidenceCoverageBelow;
+  if (coverageApprovalBelow !== null && input.evidenceCoverage < coverageApprovalBelow) {
+    reasons.push(
+      `evidence coverage ${input.evidenceCoverage.toFixed(2)} < approval threshold ${coverageApprovalBelow}`,
+    );
+  }
+
   for (const c of checks) {
     if (!c.passed && c.severity === "warn" && c.verifier === "policy") reasons.push(c.detail);
   }
@@ -82,7 +108,7 @@ export function runCommitGate(input: CommitGateInput): CommitDecision {
     reasons.push("auto-commit disabled by commit policy");
   }
   if (reasons.length > 0) {
-    const reason = reasons.join("; ");
+    const reason = [...new Set(reasons)].join("; ");
     return { type: "needs_approval", reason, approvalPayload: gateApprovalPayload(input, reason) };
   }
 

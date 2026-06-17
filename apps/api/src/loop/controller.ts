@@ -52,7 +52,10 @@ export type LoopDeps = {
   ) => Record<string, unknown>;
   commitPolicy: CommitPolicy;
   budget: BudgetPolicy;
-  /** Authority-boundary predicate. Plan 5 supplies the real one (commit gate); default: never. */
+  /**
+   * Authority-boundary predicate. The production implementation is `makeApprovalRequired`
+   * (./approval-gate.ts), which runs the deterministic commit gate; default: never.
+   */
   approvalRequired?: (state: LatentWorkflowState, entropy: EntropyScore) => boolean;
 };
 

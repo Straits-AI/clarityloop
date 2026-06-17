@@ -103,6 +103,37 @@ describe("runCommitGate", () => {
     expect(d.type).toBe("needs_approval");
   });
 
+  it("needs_approval when a blocking evidence_coverage_threshold check fails (coverage below minimum)", () => {
+    const checks: Check[] = [
+      { name: "artifact_schema_valid", verifier: "schema", passed: true, severity: "info", detail: "" },
+      { name: "evidence_coverage_threshold", verifier: "evidence_coverage", passed: false, severity: "blocking", detail: "coverage 0.50 < required 1" },
+    ];
+    // entropy/risk within the auto-commit ceiling: only the failed coverage gate forces approval.
+    const d = runCommitGate(input({ checks, evidenceCoverage: 0.5 }));
+    expect(d.type).toBe("needs_approval");
+    if (d.type === "needs_approval") expect(d.reason).toContain("evidence coverage");
+  });
+
+  it("needs_approval when numeric coverage is below the policy approval threshold", () => {
+    const d = runCommitGate(input({ evidenceCoverage: 0.5 })); // 0.5 < requireApprovalIf.evidenceCoverageBelow (0.8)
+    expect(d.type).toBe("needs_approval");
+  });
+
+  it("authority boundary forces approval for an always-approval category within the risk ceiling", () => {
+    // An L2 external-send action is within the L2 ceiling, but external_send is in approvalRequiredFor.
+    const externalSend: Check[] = [
+      ...passingChecks,
+      { name: "external_send", verifier: "policy", passed: false, severity: "info", detail: "commit performs an external send" },
+    ];
+    const gated = runCommitGate(input({ checks: externalSend, riskClass: "L2" }));
+    expect(gated.type).toBe("needs_approval");
+    if (gated.type === "needs_approval") expect(gated.reason).toContain("external_send");
+
+    // The same action commits when the category is NOT in the authority boundary's approval set.
+    const lenient: AuthorityBoundary = { ...authority, approvalRequiredFor: [] };
+    expect(runCommitGate(input({ checks: externalSend, riskClass: "L2", authorityBoundary: lenient })).type).toBe("commit");
+  });
+
   it("reject takes precedence over needs_approval when both a hard failure and high risk exist", () => {
     const checks: Check[] = [
       { name: "artifact_schema_invalid", verifier: "schema", passed: false, severity: "blocking", detail: "bad shape" },

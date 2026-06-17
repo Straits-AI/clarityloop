@@ -13,6 +13,7 @@ import {
 } from "@clarityloop/core";
 import { computeEvidenceCoverage, runAllVerifiers } from "@clarityloop/verifiers";
 import type { ModelProvider } from "@clarityloop/qwen";
+import { authorityCategoryChecks } from "./authority-checks";
 
 export const RiskSignalsSchema = z.object({
   structuralChange: z.boolean(),
@@ -47,12 +48,15 @@ export type CommitResponse = {
 
 /** Compose verifiers + entropy + risk classification + commit gate; enrich any approval payload. */
 export async function runCommitPipeline(provider: ModelProvider, req: CommitRequest): Promise<CommitResponse> {
-  const checks = runAllVerifiers({
-    state: req.state,
-    evidence: req.evidence,
-    workflowSpec: req.workflowSpec,
-    draftArtifact: req.draftArtifact ?? null,
-  });
+  const checks = [
+    ...runAllVerifiers({
+      state: req.state,
+      evidence: req.evidence,
+      workflowSpec: req.workflowSpec,
+      draftArtifact: req.draftArtifact ?? null,
+    }),
+    ...authorityCategoryChecks(req.riskSignals, req.workflowSpec.commitPolicy),
+  ];
   const entropy = scoreEntropy(req.state);
   const evidenceCoverage = computeEvidenceCoverage(req.state, req.evidence);
   const riskClass = classifyRiskClass(req.riskSignals, req.workflowSpec.commitPolicy);
