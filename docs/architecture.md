@@ -56,7 +56,9 @@ that gates anything.
   `evidence_coverage`, `policy`, `hallucinated_tool`, `missing_info`. All deterministic.
 - **@clarityloop/memory** — `scoreMemoryValue`, `runMemoryWriteGate`. Pure functions.
 - **@clarityloop/evals** — ClarityLoopBench (36 seeded cases, four baseline runners,
-  scoring report) + replay engine + promotion comparison.
+  scoring report) + replay engine + promotion comparison. The ClarityLoop runner composes the
+  real `scoreEntropy` + `classifyRiskClass` + `runCommitGate` from `@clarityloop/core` for its
+  commit decision (the gate is not reimplemented), so the bench doubles as commit-gate coverage.
 
 ## Apps
 
