@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:fc": "esbuild src/server-fc.ts --bundle --platform=node --target=node20 --format=cjs --outfile=fc-dist/index.cjs --external:pg-native && printf '#!/bin/bash\\nexec node index.cjs\\n' > fc-dist/bootstrap && chmod +x fc-dist/bootstrap && cd fc-dist && rm -f clarityloop-fc.zip && zip -q clarityloop-fc.zip bootstrap index.cjs"
   },
   "dependencies": {
     "@clarityloop/core": "workspace:*",
