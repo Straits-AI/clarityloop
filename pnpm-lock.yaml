@@ -63,6 +63,9 @@ importers:
       '@clarityloop/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@clarityloop/evals':
+        specifier: workspace:*
+        version: link:../../packages/evals
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -124,9 +127,16 @@ importers:
       '@clarityloop/qwen':
         specifier: workspace:*
         version: link:../qwen
+      '@clarityloop/storage':
+        specifier: workspace:*
+        version: link:../storage
       zod:
         specifier: ^3.23.0
         version: 3.25.76
+    devDependencies:
+      tsx:
+        specifier: ^4.16.0
+        version: 4.22.4
 
   packages/memory:
     dependencies:
