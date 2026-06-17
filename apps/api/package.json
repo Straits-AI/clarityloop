@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@clarityloop/core": "workspace:*",
+    "@clarityloop/evals": "workspace:*",
     "@clarityloop/qwen": "workspace:*",
     "@clarityloop/storage": "workspace:*",
     "@clarityloop/tools": "workspace:*",

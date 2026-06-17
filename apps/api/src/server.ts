@@ -2,7 +2,8 @@ import { serve } from "@hono/node-server";
 import { Pool } from "pg";
 import { DashScopeProvider } from "@clarityloop/qwen";
 import { ToolNameSchema } from "@clarityloop/core";
-import { PgRunRepository, INIT_SQL } from "@clarityloop/storage";
+import { PgRunRepository, INIT_SQL, InMemoryProcedureVersionRepository, InMemoryTraceRepository } from "@clarityloop/storage";
+import { SEED_CASES } from "@clarityloop/evals";
 import { createApp } from "./app";
 
 const apiKey = process.env.DASHSCOPE_API_KEY;
@@ -18,6 +19,11 @@ const app = createApp({
   provider: new DashScopeProvider({ apiKey, baseURL: process.env.DASHSCOPE_BASE_URL }),
   runs: new PgRunRepository(pool),
   allowedTools: [...ToolNameSchema.options],
+  // NOTE: in-memory repositories are used until the Pg* repositories are wired
+  // via DATABASE_URL. Swapping is a one-line change behind the repository interface.
+  procedureRepo: new InMemoryProcedureVersionRepository(),
+  traceRepo: new InMemoryTraceRepository(),
+  replayCases: SEED_CASES,
 });
 
 const port = Number(process.env.PORT ?? 8080);
