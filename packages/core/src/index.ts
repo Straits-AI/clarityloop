@@ -16,3 +16,4 @@ export * from "./memory";
 export * from "./risk";
 export * from "./commit-gate";
 export * from "./outcome";
+export * from "./patch";
