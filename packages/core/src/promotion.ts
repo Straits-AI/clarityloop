@@ -1,12 +1,6 @@
 import { z } from "zod";
-
-/** A single per-case (or aggregate) metric reading. */
-export const EvaluationResultSchema = z.object({
-  caseId: z.string(),
-  metric: z.string(),
-  value: z.number(),
-});
-export type EvaluationResult = z.infer<typeof EvaluationResultSchema>;
+// EvaluationResult is defined in ./procedure (re-exported from the barrel) — import, do NOT redefine.
+export { EvaluationResultSchema, type EvaluationResult } from "./procedure";
 
 /** Headline procedure metrics (memo §20 / design spec §9). */
 export const ProcedureMetricsSchema = z.object({

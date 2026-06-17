@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { WorkflowStepSchema } from "./workflow";
-import type { WorkflowSpec } from "./types";
+import type { WorkflowSpec } from "./workflow";
 
 /** One structural edit to a WorkflowSpec. Qwen proposes these; code applies them. */
 export const WorkflowPatchOpSchema = z.discriminatedUnion("op", [
