@@ -17,3 +17,4 @@ export * from "./risk";
 export * from "./commit-gate";
 export * from "./outcome";
 export * from "./patch";
+export * from "./promotion";
