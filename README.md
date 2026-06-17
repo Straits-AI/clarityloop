@@ -16,24 +16,37 @@ Built for the **Global AI Hackathon Series with Qwen Cloud — Track 4: Autopilo
 
 ## Status
 
-Phase 1 (Foundation) is complete. The monorepo, the deterministic entropy core, the
-cloud-portability seams, and a containerized Hono API are in place and tested. Later phases
-(workflow generation, the live loop + dashboard, tools, commit gate, promotion/replay,
-benchmark) are planned but not yet built — see `docs/superpowers/plans/`.
+**The full vertical slice is built and tested** — 243 tests passing across 9 packages, with
+build + typecheck green. The only remaining item is the human-gated Alibaba Cloud onboarding +
+deploy (Phase 0), which cannot be automated.
 
-| Area | State |
+| Package / area | State |
 | --- | --- |
 | Monorepo (pnpm + Turborepo + Vitest) | ✅ |
-| `@clarityloop/core` — schemas, types, deterministic entropy scorer | ✅ (12 tests) |
-| `@clarityloop/storage` — S3-compatible artifact store (OSS / R2) | ✅ (2 tests) |
-| `@clarityloop/qwen` — DashScope provider + structured generation | ✅ (2 tests) |
-| `@clarityloop/api` — Hono app (`/health`, `/score`, `/qwen/ping`) | ✅ (2 tests) |
-| Docker + Compose (api + Postgres) | ✅ (image builds) |
-| Alibaba ECS deploy | ⏳ pending Phase 0 onboarding |
-| Workflow generation, loop, dashboard, gates, benchmark | ⏳ Plans 2–7 |
+| `@clarityloop/core` — schemas, types, entropy scorer, next-best-action scorer, risk classifier, **commit gate**, **promotion gate** | ✅ (81 tests) |
+| `@clarityloop/qwen` — DashScope provider + zod-validated structured generation | ✅ (2 tests) |
+| `@clarityloop/storage` — S3-compatible artifact store + run/trace/procedure/memory repositories (in-memory + `pg`) | ✅ (17 tests) |
+| `@clarityloop/tools` — the six business tools + registry | ✅ (18 tests) |
 | `@clarityloop/verifiers` — six deterministic verifiers | ✅ (22 tests) |
-| `@clarityloop/core` — risk classifier + commit gate + outcome mapping | ✅ (+20 tests) |
-| Commit gate API (`/commit`, `/approvals/resolve`) + approval panel | ✅ |
+| `@clarityloop/memory` — operational-memory value score + write gate + TTL/conflict | ✅ (13 tests) |
+| `@clarityloop/evals` — ClarityLoopBench (36 cases), baselines, replay benchmark, promotion gate | ✅ (34 tests) |
+| `@clarityloop/api` — Hono app: workflow gen, latent loop, SSE, commit/approval/improve/promote routes | ✅ (30 tests) |
+| `@clarityloop/web` — dashboard: entropy heatmap, panels, approval, replay, lineage, 3-column demo | ✅ (26 tests) |
+| Docker + Compose (api + Postgres) | ✅ (image builds) |
+| Alibaba ECS deploy | ⏳ pending Phase 0 onboarding (human-gated) |
+
+### Benchmark headline (ClarityLoopBench, 36 cases — `pnpm --filter @clarityloop/evals bench`)
+
+| Baseline | Completion | False commit | Approval burden |
+| --- | --- | --- | --- |
+| Bare Qwen | 100% | **92%** | 0% |
+| Dynamic Qwen Workflow | 100% | **28%** | 0% |
+| Fixed Gate | 31% | 0% | 31% |
+| **ClarityLoop** | **94%** | **0%** | **22%** |
+
+ClarityLoop matches the fixed gate's 0% false-commit rate but completes 94% vs 31% of tasks with
+*lower* approval burden — it is safe without being dumb, because it loops for missing signal
+before blocking. (Safety gain vs dynamic agent: 28 points; constraint tax vs dynamic: 6 points.)
 
 ---
 
@@ -45,14 +58,23 @@ Cloudflare deploy remains a near-free second target.
 
 ```
 apps/
-  api/        Hono server — /health, /score (deterministic entropy), /qwen/ping
+  api/        Hono server — workflow gen, latent loop, SSE entropy stream, commit/approval/improve/promote
+  web/        Vite + React + Tailwind dashboard — entropy heatmap, panels, approval, replay, 3-column demo
 packages/
-  core/       Zod schemas, domain types, PURE deterministic entropy scorer
+  core/       Zod schemas, domain types, PURE deterministic kernel: entropy scorer, action scorer,
+              risk classifier, commit gate, promotion gate
   qwen/       ModelProvider interface, DashScope (OpenAI-compatible) client, structured JSON gen
-  storage/    ArtifactStore interface — in-memory + OSS/R2 (S3-compatible) implementations
+  storage/    ArtifactStore (OSS/R2, S3-compatible) + run/trace/procedure/memory repositories (in-memory + pg)
+  tools/      the six business tools (catalog, memory, stock, supplier-quote parse, compare, draft) + registry
+  verifiers/  six deterministic verifiers (schema, numeric, evidence coverage, policy, hallucinated-tool, missing-info)
+  memory/     operational-memory value score + write gate + TTL/conflict invalidation
+  evals/      ClarityLoopBench cases, baseline runners, replay benchmark, promotion gate, scoring report
 infra/        Dockerfile, docker-compose (api + postgres), ECS deploy runbook
-docs/         design spec, implementation plans, deployment proof
+docs/         design spec, implementation plans, shared contracts, architecture diagram, deployment proof
 ```
+
+See [`docs/architecture.md`](docs/architecture.md) for the full system diagram, and
+[`DEVPOST.md`](DEVPOST.md) for the submission write-up.
 
 ### Key design decisions
 
