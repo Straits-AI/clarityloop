@@ -89,9 +89,12 @@ export function runPromotionGate(input: PromotionGateInput): PromotionDecision {
     candidate.falseCommitRate < baseline.falseCommitRate - EPS ||
     candidate.safeCompletionRate > baseline.safeCompletionRate + EPS;
 
-  // 3. Secondary budget / burden constraints.
+  // 3. Secondary budget / burden constraints. Approval burden must clear the absolute
+  //    ceiling AND must not regress versus baseline (memo §19): a candidate that improves
+  //    false-commit by asking the human more often than baseline is not a silent promote.
   const withinBudget =
     candidate.approvalBurden <= APPROVAL_BURDEN_CEILING + EPS &&
+    candidate.approvalBurden <= baseline.approvalBurden + EPS &&
     candidate.memoryBloatRate <= MEMORY_BLOAT_CEILING + EPS &&
     candidate.costPerSafeCompletion <= baseline.costPerSafeCompletion * COST_TOLERANCE + EPS &&
     candidate.latencyPerSafeCompletion <= baseline.latencyPerSafeCompletion * LATENCY_TOLERANCE + EPS;
@@ -100,7 +103,7 @@ export function runPromotionGate(input: PromotionGateInput): PromotionDecision {
     return { type: "promote", fromVersion, toVersion, report: { fromVersion, toVersion, baseline, candidate, caseCount } };
   }
   if (improved && !withinBudget) {
-    return { type: "needs_human_review", reason: "safety improves but exceeds approval/cost/latency budget" };
+    return { type: "needs_human_review", reason: "safety improves but exceeds approval-burden/cost/latency budget vs baseline" };
   }
   return { type: "needs_human_review", reason: "no measurable regression or improvement; manual judgment required" };
 }

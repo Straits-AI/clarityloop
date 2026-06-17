@@ -14,6 +14,23 @@ Qwen only emits the `WorkflowPatch` structure. Every score, metric, and decision
 deterministic TypeScript. Replay reuses `scoreEntropy` (the loop kernel) over each case's seeded
 latent state; a gap is "resolved" iff the spec under replay has the declared tool capability.
 
+## Replay fidelity (composes the production gate)
+`decideOutcome` does **not** reimplement gating. It reconstructs the verifier `Check[]` for the
+effective state (evidence-coverage below the workflow minimum → blocking; high-severity risk flags
+→ policy `warn`) and calls the authoritative `runCommitGate` from `@clarityloop/core` — the same
+gate the Plan 4 loop uses — so promotion metrics reflect the real commit decision (Check[],
+AuthorityBoundary, `CommitPolicy.requireApprovalIf`, evidence coverage, commit-entropy threshold,
+and the `sandbox_only` path). `runToolLoop` itself lives in `apps/api` (which already depends on
+`@clarityloop/evals`), so it is unreachable from `evals` without a cycle; `runCommitGate` is the
+shared, importable decision kernel. Replay supplies the governance the `WorkflowSpec` lacks via
+`ReplayGovernance` (`authorityBoundary` + `riskClass`), defaulted by `DEFAULT_REPLAY_GOVERNANCE`.
+
+## Promotion gate criteria (memo §19)
+`runPromotionGate` rejects any safety regression (`falseCommitRate`, `safeCompletionRate`,
+`policyViolationRate`). For a candidate with measurable safety improvement it also requires the
+secondary budget to hold: `approvalBurden` must clear the absolute ceiling **and not regress versus
+baseline**, plus memory-bloat / cost / latency budgets — otherwise `needs_human_review`.
+
 ## Operational memory write path (`@clarityloop/memory`)
 `scoreMemoryValue` (memo §16 formula) → `memoryWriteGate` rejects writes that are unsupported,
 one-off, below the value threshold, of a disallowed type, or in conflict with a stronger memory;

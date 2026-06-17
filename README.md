@@ -194,7 +194,7 @@ ClarityLoop's offline improvement loop closes the feedback cycle from failed run
 - `POST /procedures/:id/promote` — replay + gate + persist child version.
 - `GET /procedures/:name/versions` — version lineage.
 
-**New UI panels (`apps/web`):** `ReplayBenchmarkPanel` (old-vs-new metrics table with Δ and direction), `VersionLineagePanel` (parent-first tree with depth indentation).
+**New UI panels (`apps/web`):** `ReplayBenchmarkPanel` (old-vs-new metrics table with Δ and direction) and `VersionLineagePanel` (parent-first tree with depth indentation), both surfaced in the dashboard (`App.tsx`, "Procedure improvement & promotion" section) and covered by jsdom render tests with no live network.
 
 All logic is deterministic except the Qwen `WorkflowPatch` proposal; all tests use fake providers and in-memory repositories. See [`docs/technical/improvement-promotion.md`](docs/technical/improvement-promotion.md).
 

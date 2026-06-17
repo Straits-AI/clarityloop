@@ -1,8 +1,12 @@
-import { scoreEntropy } from "@clarityloop/core";
+import { runCommitGate, scoreEntropy } from "@clarityloop/core";
 import type {
+  AuthorityBoundary,
+  Check,
+  CommitDecision,
   LatentWorkflowState,
   PromotionReport,
   ProcedureMetrics,
+  RiskClass,
   RunOutcome,
   ToolName,
   WorkflowSpec,
@@ -11,6 +15,25 @@ import type { BenchmarkCase, CaseResolution } from "./cases";
 
 const COST_PER_STEP = 100;
 const LATENCY_PER_STEP = 50;
+
+/**
+ * Governance the production loop carries on the BusinessProcedureVersion but the
+ * as-generated WorkflowSpec does not. Replay must supply it so the AUTHORITATIVE
+ * commit gate (`runCommitGate`) sees the same authority boundary / risk class the
+ * real loop would. Defaults keep risk within the auto-commit ceiling so the seed
+ * cases are decided on entropy + evidence coverage, exactly as the loop does.
+ */
+export type ReplayGovernance = { authorityBoundary: AuthorityBoundary; riskClass: RiskClass };
+
+export const DEFAULT_REPLAY_GOVERNANCE: ReplayGovernance = {
+  authorityBoundary: {
+    autoCommitMaxRiskClass: "L2",
+    approvalRequiredFor: [],
+    forbiddenActions: [],
+    allowedTools: [],
+  },
+  riskClass: "L1",
+};
 
 export type CaseRunResult = {
   caseId: string;
@@ -59,27 +82,82 @@ function computeCoverage(state: LatentWorkflowState): number {
   return supported / state.claims.length;
 }
 
-/** Commit-gate-lite over the effective state: reuses scoreEntropy (the loop's kernel). */
-export function decideOutcome(state: LatentWorkflowState, spec: WorkflowSpec): RunOutcome["type"] {
-  const requiredMissing = state.missingFields.filter((m) => m.necessity === "required");
-  if (requiredMissing.length > 0) return "needs_more_info";
-  if (state.riskFlags.some((r) => r.severity === "high")) return "needs_approval";
-  const entropy = scoreEntropy(state);
-  const coverage = computeCoverage(state);
-  if (
-    entropy.commitEntropy < spec.commitPolicy.commitEntropyThreshold &&
-    coverage >= spec.evidencePolicy.minimumCoverageForCommit
-  ) {
-    return "committed";
+/**
+ * Deterministically reconstruct the Check[] the loop's verifiers would emit for this
+ * effective state, so the commit gate honours evidence-coverage and risk findings
+ * rather than a simplified inline threshold.
+ */
+function deriveChecks(state: LatentWorkflowState, spec: WorkflowSpec, coverage: number): Check[] {
+  const checks: Check[] = [];
+  // evidence_coverage verifier: coverage below the workflow minimum is a blocking failure.
+  if (coverage < spec.evidencePolicy.minimumCoverageForCommit) {
+    checks.push({
+      name: "evidence_coverage",
+      verifier: "evidence_coverage",
+      passed: false,
+      severity: "blocking",
+      detail: `coverage ${coverage.toFixed(2)} < minimum ${spec.evidencePolicy.minimumCoverageForCommit}`,
+    });
   }
-  return "rejected";
+  // High-severity risk flags route to human approval via the policy verifier (warn).
+  for (const r of state.riskFlags) {
+    if (r.severity === "high") {
+      checks.push({
+        name: r.kind,
+        verifier: "policy",
+        passed: false,
+        severity: "warn",
+        detail: `high-severity risk flag: ${r.kind}`,
+      });
+    }
+  }
+  return checks;
+}
+
+const OUTCOME_OF: Record<CommitDecision["type"], RunOutcome["type"]> = {
+  commit: "committed",
+  needs_approval: "needs_approval",
+  needs_more_info: "needs_more_info",
+  reject: "rejected",
+  sandbox_only: "sandbox_only",
+};
+
+/**
+ * Decide the outcome by composing the AUTHORITATIVE `runCommitGate` from @clarityloop/core
+ * (the same gate the production loop uses), not a replay-local reimplementation. This keeps
+ * promotion metrics faithful to real-loop behaviour: it honours Check[]/verifiers, the
+ * AuthorityBoundary, CommitPolicy.requireApprovalIf thresholds, evidence-coverage and the
+ * commit-entropy threshold. `runToolLoop` itself lives in apps/api (which already depends on
+ * packages/evals), so it is unreachable here without a dependency cycle; `runCommitGate` is
+ * the shared, importable decision kernel and is reused verbatim.
+ */
+export function decideOutcome(
+  state: LatentWorkflowState,
+  spec: WorkflowSpec,
+  governance: ReplayGovernance = DEFAULT_REPLAY_GOVERNANCE,
+): RunOutcome["type"] {
+  const coverage = computeCoverage(state);
+  const decision = runCommitGate({
+    state,
+    entropy: scoreEntropy(state),
+    checks: deriveChecks(state, spec, coverage),
+    evidenceCoverage: coverage,
+    commitPolicy: spec.commitPolicy,
+    authorityBoundary: governance.authorityBoundary,
+    riskClass: governance.riskClass,
+  });
+  return OUTCOME_OF[decision.type];
 }
 
 /** Run a single seeded case against a spec and classify the result vs ground truth. */
-export function runCase(spec: WorkflowSpec, c: BenchmarkCase): CaseRunResult {
+export function runCase(
+  spec: WorkflowSpec,
+  c: BenchmarkCase,
+  governance: ReplayGovernance = DEFAULT_REPLAY_GOVERNANCE,
+): CaseRunResult {
   const caps = specCapabilities(spec);
   const effective = resolveGaps(c.seededLatentState, caps, c.resolution);
-  const outcome = decideOutcome(effective, spec);
+  const outcome = decideOutcome(effective, spec, governance);
   const gt = c.groundTruth;
 
   const committed = outcome === "committed";
@@ -138,9 +216,11 @@ export function runReplay(input: {
   oldSpec: WorkflowSpec;
   newSpec: WorkflowSpec;
   cases: BenchmarkCase[];
+  governance?: ReplayGovernance;
 }): PromotionReport {
-  const baseline = computeProcedureMetrics(input.cases.map((c) => runCase(input.oldSpec, c)));
-  const candidate = computeProcedureMetrics(input.cases.map((c) => runCase(input.newSpec, c)));
+  const governance = input.governance ?? DEFAULT_REPLAY_GOVERNANCE;
+  const baseline = computeProcedureMetrics(input.cases.map((c) => runCase(input.oldSpec, c, governance)));
+  const candidate = computeProcedureMetrics(input.cases.map((c) => runCase(input.newSpec, c, governance)));
   return {
     fromVersion: input.fromVersion,
     toVersion: input.toVersion,

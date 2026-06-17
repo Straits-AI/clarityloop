@@ -6,6 +6,9 @@ import { RequestPanel } from "./components/RequestPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
 import { NextBestAction } from "./components/NextBestAction";
 import { TraceView } from "./components/TraceView";
+import { ReplayBenchmarkPanel } from "./components/ReplayBenchmarkPanel";
+import { VersionLineagePanel } from "./components/VersionLineagePanel";
+import { DEMO_PROMOTION_DECISION, DEMO_PROMOTION_REPORT, DEMO_VERSIONS } from "./lib/promotion-demo";
 
 const ZERO_ENTROPY: EntropyScore = {
   taskEntropy: 0, evidenceEntropy: 0, actionEntropy: 0,
@@ -46,6 +49,13 @@ export default function App() {
           <TraceView updates={updates} />
         </div>
       </div>
+      <section className="mt-6">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Procedure improvement &amp; promotion</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ReplayBenchmarkPanel report={DEMO_PROMOTION_REPORT} decision={DEMO_PROMOTION_DECISION} />
+          <VersionLineagePanel versions={DEMO_VERSIONS} />
+        </div>
+      </section>
     </main>
   );
 }

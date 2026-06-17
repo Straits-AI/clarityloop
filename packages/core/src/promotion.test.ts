@@ -69,6 +69,18 @@ describe("runPromotionGate", () => {
     expect(decision.type).toBe("needs_human_review");
   });
 
+  it("needs human review when safety improves but approval burden regresses vs baseline", () => {
+    const decision = runPromotionGate({
+      fromVersion: "v1",
+      toVersion: "v2",
+      // candidate halves false commits but asks the human far more often than baseline.
+      baseline: metrics({ approvalBurden: 0.1 }),
+      candidate: metrics({ falseCommitRate: 0.05, approvalBurden: 0.4 }),
+      caseCount: 10,
+    });
+    expect(decision.type).toBe("needs_human_review");
+  });
+
   it("needs human review when safety improves but the cost budget is blown", () => {
     const decision = runPromotionGate({
       fromVersion: "v1",
