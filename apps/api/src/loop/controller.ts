@@ -12,7 +12,10 @@ import {
   type BudgetPolicy,
   type ToolName,
 } from "@clarityloop/core";
-import type { ToolRegistry } from "@clarityloop/tools";
+import type { ToolRegistry, ToolResult, SupplierQuote } from "@clarityloop/tools";
+
+/** Successful tool outputs accumulated across a run, so later steps can chain on earlier ones. */
+export type PriorToolResults = Partial<Record<ToolName, ToolResult>>;
 
 export type LoopStopReason =
   | "commit_entropy_below_threshold"
@@ -38,8 +41,15 @@ export type LoopDeps = {
   /** Qwen-backed in production (fake in tests). Returns STRUCTURE only — no scores. */
   proposeActions: (state: LatentWorkflowState) => Promise<ProposedAction[]>;
   tools: ToolRegistry;
-  /** Builds concrete tool args from the chosen action + current state/run context. */
-  buildToolArgs: (action: CandidateAction, state: LatentWorkflowState) => Record<string, unknown>;
+  /**
+   * Builds concrete tool args from the chosen action + current state + outputs of earlier
+   * tools in this run (so e.g. compare_quote can consume a prior parse_supplier_quote result).
+   */
+  buildToolArgs: (
+    action: CandidateAction,
+    state: LatentWorkflowState,
+    priorResults?: PriorToolResults,
+  ) => Record<string, unknown>;
   commitPolicy: CommitPolicy;
   budget: BudgetPolicy;
   /** Authority-boundary predicate. Plan 5 supplies the real one (commit gate); default: never. */
@@ -101,6 +111,7 @@ export async function* runToolLoopStream(
   let tokens = 0;
   let toolCalls = 0;
   let latencyMs = 0;
+  const priorResults: PriorToolResults = {};
 
   yield { step: frame++, phase: "scored", state, entropy, nextBestAction: null, note: "initial latent state scored" };
 
@@ -135,11 +146,26 @@ export async function* runToolLoopStream(
     yield { step: frame++, phase: "acted", state, entropy: entropyBefore, nextBestAction: best.actionType, note: best.rationale };
 
     const tool = deps.tools[best.actionType];
-    const parsedArgs = tool.inputs.parse(deps.buildToolArgs(best, state));
-    const result = await tool.run(parsedArgs);
+    // Arg construction (zod parse) and the tool call can throw on malformed/missing inputs
+    // (e.g. compare_quote before a supplier quote exists). Fold any throw into a tool failure
+    // so the loop stays alive and re-scores, instead of aborting the whole run.
+    let result: ToolResult;
+    try {
+      const parsedArgs = tool.inputs.parse(deps.buildToolArgs(best, state, priorResults));
+      result = (await tool.run(parsedArgs)) as ToolResult;
+    } catch (err) {
+      result = {
+        ok: false,
+        data: null,
+        evidence: [],
+        error: err instanceof Error ? err.message : String(err),
+        costHint: { tokens: 0, latencyMs: 0, toolCost: 0 },
+      };
+    }
     tokens += result.costHint.tokens;
     latencyMs += result.costHint.latencyMs;
     toolCalls += 1;
+    if (result.ok) priorResults[best.actionType] = result;
 
     state = applyToolResult(state, best, result);
     entropy = scoreEntropy(state);
@@ -173,9 +199,28 @@ export type LoopContext = {
   } | null;
 };
 
-/** Default arg-builder: map a chosen action + run context to the tool's input shape. */
+/**
+ * Default arg-builder: map a chosen action + run context to the tool's input shape, preferring
+ * outputs of earlier tools in the same run over the seeded context (so parse_supplier_quote feeds
+ * compare_quote / draft_quote, and lookup_catalog augments the catalog used for comparison).
+ */
 export function makeBuildToolArgs(context: LoopContext) {
-  return (action: CandidateAction, _state: LatentWorkflowState): Record<string, unknown> => {
+  return (
+    action: CandidateAction,
+    _state: LatentWorkflowState,
+    prior: PriorToolResults = {},
+  ): Record<string, unknown> => {
+    // A supplier quote parsed earlier this run takes precedence over the seeded context.
+    const parsed = prior.parse_supplier_quote?.ok ? (prior.parse_supplier_quote.data as SupplierQuote | null) : null;
+    const supplier = parsed ?? context.supplierQuote;
+    // A catalog line looked up earlier this run is upserted into the seeded catalog.
+    const looked = prior.lookup_catalog?.ok
+      ? (prior.lookup_catalog.data as { sku: string; unitPrice: number } | null)
+      : null;
+    const catalog = looked
+      ? [...context.catalog.filter((c) => c.sku !== looked.sku), { sku: looked.sku, unitPrice: looked.unitPrice }]
+      : context.catalog;
+
     switch (action.actionType) {
       case "retrieve_memory":
         return { scope: context.scope, entity: context.customer, type: null };
@@ -186,11 +231,11 @@ export function makeBuildToolArgs(context: LoopContext) {
       case "parse_supplier_quote":
         return { artifactKey: context.artifactKey ?? "" };
       case "compare_quote":
-        return { supplier: context.supplierQuote, catalog: context.catalog, maxDeltaPct: 0.1 };
+        return { supplier, catalog, maxDeltaPct: 0.1 };
       case "draft_quote":
         return {
           customer: context.customer,
-          lineItems: (context.supplierQuote?.lineItems ?? []).map((li) => ({
+          lineItems: (supplier?.lineItems ?? []).map((li) => ({
             sku: li.sku,
             quantity: li.quantity,
             unitPrice: li.unitPrice,

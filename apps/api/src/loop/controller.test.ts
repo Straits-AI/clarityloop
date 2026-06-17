@@ -144,6 +144,55 @@ describe("runToolLoop (stop conditions)", () => {
     expect(result.steps).toHaveLength(1);
   });
 
+  it("folds a malformed tool call (compare_quote with no supplier quote) as a failure instead of aborting the run", async () => {
+    const tools = await setup();
+    const noSupplier: LoopContext = { ...context, supplierQuote: null };
+    // Without the controller's try/catch, the required-supplier zod parse would throw and reject
+    // the generator, aborting the whole run. It must instead be folded as a tool failure.
+    const result = await runToolLoop(initialState, {
+      proposeActions: async () => [
+        { id: "c", actionType: "compare_quote", verifierName: null, targetField: "price_claim", rationale: "reconcile" },
+      ],
+      tools,
+      buildToolArgs: makeBuildToolArgs(noSupplier),
+      commitPolicy,
+      budget: { ...generousBudget, maxLoopIterations: 2 },
+    });
+    expect(["budget_exhausted", "no_useful_action"]).toContain(result.stopReason);
+    expect(result.finalState.toolFailures).toContain("compare_quote");
+  });
+
+  it("chains parse_supplier_quote output into a later compare_quote (prior-result threading)", async () => {
+    const tools = await setup();
+    // Seed an artifact so parse_supplier_quote (fake-provider backed) can produce a supplier quote,
+    // and start from a context with NO supplierQuote so compare_quote can only succeed via chaining.
+    const store = new InMemoryArtifactStore();
+    await store.put("supplier_quote.txt", "Coffee 1kg x120 @ 41.00 MYR, total 4920 MYR");
+    const chainTools = createToolRegistry({
+      memory: await (async () => { const m = new InMemoryMemoryRepository(); await seedMemoryRepository(m); return m; })(),
+      provider: { async complete() { return JSON.stringify({ lineItems: [{ sku: "CTN-COFFEE-1KG", description: "Coffee 1kg", quantity: 120, unitPrice: 41.0 }], total: 4920, currency: "MYR" }); } },
+      store,
+    });
+    const chainContext: LoopContext = { ...context, supplierQuote: null, artifactKey: "supplier_quote.txt" };
+    // Sequence the proposer so parse_supplier_quote provably runs before compare_quote; the threading
+    // is what lets the second step's compare succeed with no supplier in the seeded context.
+    let call = 0;
+    const result = await runToolLoop(initialState, {
+      proposeActions: async () => {
+        call += 1;
+        return call === 1
+          ? [{ id: "p", actionType: "parse_supplier_quote", verifierName: null, targetField: "exact_sku", rationale: "parse the attached quote" }]
+          : [{ id: "c", actionType: "compare_quote", verifierName: null, targetField: "price_claim", rationale: "reconcile supplier vs catalog" }];
+      },
+      tools: chainTools,
+      buildToolArgs: makeBuildToolArgs(chainContext),
+      commitPolicy,
+      budget: { ...generousBudget, maxLoopIterations: 4 },
+    });
+    // compare_quote must NOT appear as a failure: it succeeded by consuming the parsed supplier quote.
+    expect(result.finalState.toolFailures).not.toContain("compare_quote");
+  });
+
   it("stops with approval_required when the authority-boundary predicate trips", async () => {
     const tools = await setup();
     const result = await runToolLoop(initialState, {
