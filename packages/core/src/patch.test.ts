@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { WorkflowPatchSchema, applyPatch } from "./patch";
-import type { WorkflowSpec, WorkflowStep } from "./types";
+import type { WorkflowSpec, WorkflowStep } from "./workflow";
 
 const toolStep = (id: string, toolName: string): WorkflowStep => ({
   id,
