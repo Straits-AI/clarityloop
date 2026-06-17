@@ -31,6 +31,9 @@ benchmark) are planned but not yet built — see `docs/superpowers/plans/`.
 | Docker + Compose (api + Postgres) | ✅ (image builds) |
 | Alibaba ECS deploy | ⏳ pending Phase 0 onboarding |
 | Workflow generation, loop, dashboard, gates, benchmark | ⏳ Plans 2–7 |
+| `@clarityloop/verifiers` — six deterministic verifiers | ✅ (22 tests) |
+| `@clarityloop/core` — risk classifier + commit gate + outcome mapping | ✅ (+20 tests) |
+| Commit gate API (`/commit`, `/approvals/resolve`) + approval panel | ✅ |
 
 ---
 
@@ -142,6 +145,18 @@ pnpm --filter @clarityloop/web dev        # :5173
 The dashboard calls `GET /demo/entropy-stream` (no Qwen key needed for the demo). For the real loop (`POST /runs/stream`) set `DASHSCOPE_API_KEY`.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full architecture reference.
+
+---
+
+### Commit gate & approval
+
+When a run loop stops, deterministic code — never the model — decides whether the output may
+commit. Six verifiers (`@clarityloop/verifiers`: schema, numeric reconciliation, evidence
+coverage, policy, hallucinated-tool, missing-info) emit `Check[]`; `runCommitGate` combines them
+with the entropy score, the risk class (L0–L4), and the governed commit policy / authority
+boundary to return one of `commit | needs_approval | needs_more_info | reject | sandbox_only`.
+High-risk decisions route to a human via `POST /commit` → `ApprovalPanel` → `POST /approvals/resolve`.
+See [`docs/commit-gate-and-approval.md`](docs/commit-gate-and-approval.md).
 
 ---
 
