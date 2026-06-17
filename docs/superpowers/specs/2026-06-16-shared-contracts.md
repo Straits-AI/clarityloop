@@ -256,6 +256,35 @@ export const WorkflowSpecSchema = z.object({
 export type WorkflowSpec = z.infer<typeof WorkflowSpecSchema>;
 ```
 
+### WorkflowPatch (Plan 6 addition — `packages/core`)
+
+```ts
+/** One structural edit to a WorkflowSpec. Qwen proposes these; code applies them. */
+export const WorkflowPatchOpSchema = z.discriminatedUnion("op", [
+  z.object({ op: z.literal("insert_step"), afterStepId: z.string().nullable(), step: WorkflowStepSchema }),
+  z.object({ op: z.literal("remove_step"), stepId: z.string() }),
+  z.object({ op: z.literal("replace_step"), stepId: z.string(), step: WorkflowStepSchema }),
+  z.object({ op: z.literal("set_commit_threshold"), commitEntropyThreshold: z.number().min(0).max(1) }),
+]);
+export type WorkflowPatchOp = z.infer<typeof WorkflowPatchOpSchema>;
+
+export const WorkflowPatchSchema = z.object({
+  id: z.string(),
+  rationale: z.string(),
+  triggerCondition: z.string(),
+  sourceTraceId: z.string().nullable(),
+  ops: z.array(WorkflowPatchOpSchema).min(1),
+  expectedEntropyReduction: z.number(),
+});
+export type WorkflowPatch = z.infer<typeof WorkflowPatchSchema>;
+
+/**
+ * Deterministically apply a WorkflowPatch to a WorkflowSpec (immutable).
+ * Bumps the version string ("v1" → "v2"). Throws on missing stepId.
+ */
+export function applyPatch(spec: WorkflowSpec, patch: WorkflowPatch): WorkflowSpec;
+```
+
 ---
 
 ## 5. Governance — authority boundary
@@ -532,8 +561,11 @@ export const BusinessProcedureVersionSchema = z.object({
 export type BusinessProcedureVersion = z.infer<typeof BusinessProcedureVersionSchema>;
 ```
 
-Promotion gate contract — deterministic, `packages/evals`, Plan 6. Replay old vs new on seeded
-cases, then:
+Promotion gate contract — deterministic, **`packages/core`** (not `packages/evals`), Plan 6.
+Per design spec §4 ("core/ … CommitGate, PromotionGate"), `runPromotionGate` is a pure function
+over `ProcedureMetrics` with zero eval/IO dependency. The **replay engine** (`runReplay`,
+`runCase`, `computeProcedureMetrics`, `proposeWorkflowPatch`) lives in `packages/evals`.
+Replay old vs new on seeded cases, then:
 
 ```ts
 export type PromotionGateInput = {
@@ -819,6 +851,8 @@ and `Pg*Repository` (deployed, `pg`).
 | `Verifier`, `VerifierInput` + the six verifiers | verifiers | Plan 5 |
 | `EvaluationResult`, `ProcedureMetrics`, `PromotionReport`, `RegressionReport`, `PromotionDecision` | core | Plan 6 |
 | `BusinessProcedureVersion` | core | Plan 2 (skeleton) / completed Plan 6 |
-| `runPromotionGate`, replay runner, `ProcedureVersionRepository` usage | evals | Plan 6 |
+| `WorkflowPatch`, `WorkflowPatchOp`, `applyPatch` | core | Plan 6 |
+| `runPromotionGate` | core | Plan 6 (see §9 placement note) |
+| replay runner (`runReplay`, `runCase`, `computeProcedureMetrics`), `proposeWorkflowPatch`, `improveAndEvaluate` | evals | Plan 6 |
 | `BenchmarkCase`, baseline runners, scoring report (built on `ProcedureMetrics`) | evals | Plan 7 |
 | Loop controller, run service, SSE stream (composition of the above) | apps/api | Plan 3–6 |

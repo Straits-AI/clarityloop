@@ -177,6 +177,29 @@ Plan 3 `EntropyUpdate` SSE frame, so the heatmap animates `0.60 → 0.50 → 0.2
 
 ---
 
+## Improvement + Promotion (Phase 6)
+
+ClarityLoop's offline improvement loop closes the feedback cycle from failed runs to a safer, version-controlled workflow.
+
+**Flow:** a failed/seed trace → `proposeWorkflowPatch` (Qwen via `@clarityloop/evals`, structure only) → `applyPatch` (deterministic, bumps version) → `runReplay` (deterministic replay of old vs new `WorkflowSpec` over seeded `BenchmarkCase`s) → `ProcedureMetrics` (baseline vs candidate) → `runPromotionGate` (`@clarityloop/core`, memo §19 criteria) → `PromotionDecision` (`promote` | `reject+RegressionReport` | `needs_human_review`). On `promote`, a child `BusinessProcedureVersion` is persisted with `parentVersion`, `rollbackPointer`, `promotedAt`, and candidate metrics.
+
+**New packages:**
+- `@clarityloop/evals`: `BenchmarkCase`/`SEED_CASES`, `runReplay`, `computeProcedureMetrics`, `runCase`, `proposeWorkflowPatch`, `improveAndEvaluate`.
+- `@clarityloop/memory`: `scoreMemoryValue` (memo §16), `memoryWriteGate` (rejects unsupported/one-off/conflicting/below-threshold), `isExpired` (TTL), `commitMemory`.
+
+**Core additions (`@clarityloop/core`):** `WorkflowPatch`/`WorkflowPatchOp`/`applyPatch`, `ProcedureMetrics`/`PromotionReport`/`RegressionReport`/`PromotionDecision`, `runPromotionGate`.
+
+**New API routes (`apps/api`):**
+- `POST /procedures/:id/improve` — Qwen proposes a `WorkflowPatch` from a failure context.
+- `POST /procedures/:id/promote` — replay + gate + persist child version.
+- `GET /procedures/:name/versions` — version lineage.
+
+**New UI panels (`apps/web`):** `ReplayBenchmarkPanel` (old-vs-new metrics table with Δ and direction), `VersionLineagePanel` (parent-first tree with depth indentation).
+
+All logic is deterministic except the Qwen `WorkflowPatch` proposal; all tests use fake providers and in-memory repositories. See [`docs/technical/improvement-promotion.md`](docs/technical/improvement-promotion.md).
+
+---
+
 ## License
 
 See [`LICENSE`](LICENSE).
