@@ -12,10 +12,15 @@
   },
   "dependencies": {
     "@clarityloop/core": "workspace:*",
+    "@clarityloop/evals": "workspace:*",
     "@clarityloop/qwen": "workspace:*",
     "@clarityloop/storage": "workspace:*",
+    "@clarityloop/tools": "workspace:*",
+    "@clarityloop/verifiers": "workspace:*",
     "@hono/node-server": "^1.12.0",
-    "hono": "^4.5.0"
+    "hono": "^4.5.0",
+    "pg": "^8.12.0",
+    "zod": "^3.23.0"
   },
-  "devDependencies": { "tsx": "^4.16.0" }
+  "devDependencies": { "tsx": "^4.16.0", "@types/pg": "^8.11.0" }
 }

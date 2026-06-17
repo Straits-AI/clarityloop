@@ -1,0 +1,25 @@
+{
+  "fromVersion": "quote-procedure-v1",
+  "toVersion": "quote-procedure-v2",
+  "baseline": {
+    "safeCompletionRate": 0.7777777777777778,
+    "falseCommitRate": 0,
+    "policyViolationRate": 0,
+    "approvalBurden": 0.2222222222222222,
+    "evidenceCoverage": 0.7805555555555553,
+    "costPerSafeCompletion": 5,
+    "latencyPerSafeCompletion": 0,
+    "memoryBloatRate": 0
+  },
+  "candidate": {
+    "safeCompletionRate": 0.9444444444444444,
+    "falseCommitRate": 0,
+    "policyViolationRate": 0,
+    "approvalBurden": 0.2222222222222222,
+    "evidenceCoverage": 0.8555555555555554,
+    "costPerSafeCompletion": 4.823529411764706,
+    "latencyPerSafeCompletion": 0,
+    "memoryBloatRate": 0
+  },
+  "caseCount": 36
+}

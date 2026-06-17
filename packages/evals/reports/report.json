@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-06-17T04:09:53.828Z",
+  "caseCount": 36,
+  "evidenceThreshold": 0.7,
+  "baselines": [
+    {
+      "baseline": "bare_qwen",
+      "total": 36,
+      "taskCompletionRate": 1,
+      "falseCommitRate": 0.9166666666666666,
+      "policyViolationRate": 0.19444444444444445,
+      "safeCompletionRate": 0.08333333333333333,
+      "approvalBurden": 0,
+      "evidenceCoverage": 0.5680555555555555,
+      "costPerSafeCompletion": 24
+    },
+    {
+      "baseline": "dynamic_qwen",
+      "total": 36,
+      "taskCompletionRate": 1,
+      "falseCommitRate": 0.2777777777777778,
+      "policyViolationRate": 0.19444444444444445,
+      "safeCompletionRate": 0.7222222222222222,
+      "approvalBurden": 0,
+      "evidenceCoverage": 0.8555555555555554,
+      "costPerSafeCompletion": 5.538461538461538
+    },
+    {
+      "baseline": "fixed_gate",
+      "total": 36,
+      "taskCompletionRate": 0.3055555555555556,
+      "falseCommitRate": 0,
+      "policyViolationRate": 0,
+      "safeCompletionRate": 0.3055555555555556,
+      "approvalBurden": 0.3055555555555556,
+      "evidenceCoverage": 0.5680555555555555,
+      "costPerSafeCompletion": 6.545454545454546
+    },
+    {
+      "baseline": "clarityloop",
+      "total": 36,
+      "taskCompletionRate": 0.9444444444444444,
+      "falseCommitRate": 0,
+      "policyViolationRate": 0,
+      "safeCompletionRate": 0.9444444444444444,
+      "approvalBurden": 0.2222222222222222,
+      "evidenceCoverage": 0.8555555555555554,
+      "costPerSafeCompletion": 4.823529411764706
+    }
+  ],
+  "comparison": {
+    "constraintTax": 0.05555555555555558,
+    "safetyGain": 0.2777777777777778
+  }
+}

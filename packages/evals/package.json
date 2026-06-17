@@ -1,0 +1,20 @@
+{
+  "name": "@clarityloop/evals",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bench": "tsx src/bench/cli.ts"
+  },
+  "dependencies": {
+    "@clarityloop/core": "workspace:*",
+    "@clarityloop/qwen": "workspace:*",
+    "@clarityloop/storage": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": { "tsx": "^4.16.0" }
+}
