@@ -3,35 +3,36 @@ import { toReplayRows } from "../lib/promotion-view";
 
 const fmt = (n: number): string => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 const tone = (d: "better" | "worse" | "same"): string =>
-  d === "better" ? "text-emerald-600" : d === "worse" ? "text-rose-600" : "text-slate-500";
+  d === "better" ? "text-go" : d === "worse" ? "text-stop" : "text-dim";
 
 export function ReplayBenchmarkPanel(props: { report: PromotionReport; decision: PromotionDecision }) {
   const rows = toReplayRows(props.report);
   const { report, decision } = props;
+  const vcls = decision.type === "promote" ? "v-go" : decision.type === "reject" ? "v-stop" : "v-hold";
   return (
-    <section className="rounded-lg border border-slate-200 p-4">
-      <header className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-base font-semibold">Replay benchmark</h2>
-        <span className="text-sm text-slate-500">
+    <section className="panel p-5">
+      <header className="mb-4 flex items-baseline justify-between">
+        <h2 className="eyebrow text-body">Replay benchmark</h2>
+        <span className="data text-[11px] text-dim">
           {report.fromVersion} → {report.toVersion} · {report.caseCount} cases
         </span>
       </header>
-      <table className="w-full text-sm">
+      <table className="w-full">
         <thead>
-          <tr className="text-left text-slate-500">
-            <th className="py-1">Metric</th>
-            <th className="py-1 text-right">Baseline</th>
-            <th className="py-1 text-right">Candidate</th>
-            <th className="py-1 text-right">Δ</th>
+          <tr className="eyebrow !text-[9.5px] text-left">
+            <th className="pb-2 font-medium">Metric</th>
+            <th className="pb-2 text-right font-medium">Baseline</th>
+            <th className="pb-2 text-right font-medium">Candidate</th>
+            <th className="pb-2 text-right font-medium">Δ</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.metric} className="border-t border-slate-100">
-              <td className="py-1">{r.label}</td>
-              <td className="py-1 text-right tabular-nums">{fmt(r.baseline)}</td>
-              <td className="py-1 text-right tabular-nums">{fmt(r.candidate)}</td>
-              <td className={`py-1 text-right tabular-nums ${tone(r.direction)}`}>
+            <tr key={r.metric} className="border-t border-line">
+              <td className="py-2 text-[13px] text-body">{r.label}</td>
+              <td className="data py-2 text-right text-[13px] text-dim">{fmt(r.baseline)}</td>
+              <td className="data py-2 text-right text-[13px] text-hi">{fmt(r.candidate)}</td>
+              <td className={`data py-2 text-right text-[13px] ${tone(r.direction)}`}>
                 {r.delta >= 0 ? "+" : ""}
                 {fmt(r.delta)}
               </td>
@@ -39,19 +40,9 @@ export function ReplayBenchmarkPanel(props: { report: PromotionReport; decision:
           ))}
         </tbody>
       </table>
-      <footer className="mt-3 text-sm">
-        <span className="font-medium">Decision: </span>
-        <span
-          className={
-            decision.type === "promote"
-              ? "text-emerald-600"
-              : decision.type === "reject"
-                ? "text-rose-600"
-                : "text-amber-600"
-          }
-        >
-          {decision.type}
-        </span>
+      <footer className="mt-4 flex items-center gap-3 border-t border-line pt-4">
+        <span className="eyebrow">Decision</span>
+        <span className={`verdict ${vcls}`}>{decision.type}</span>
       </footer>
     </section>
   );

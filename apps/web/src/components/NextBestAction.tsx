@@ -1,10 +1,16 @@
 export function NextBestAction({ action, note }: { action: string | null; note: string | null }) {
+  const idle = !action;
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Next Best Action</h2>
-      <p className="text-lg font-semibold text-slate-900">{action ?? "— (loop idle)"}</p>
-      {note ? <p className="mt-1 text-sm text-slate-500">{note}</p> : null}
-      <p className="mt-2 text-xs text-slate-400">Scored selection arrives in Plan 4 (selectNextBestAction).</p>
+    <section className="panel p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="eyebrow text-body">Next Best Action</h2>
+        <span className="data text-[10px] text-dim">argmax · value − cost</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className={`h-2 w-2 shrink-0 rounded-full ${idle ? "bg-dim" : "bg-cyan"}`} style={idle ? {} : { boxShadow: "0 0 9px var(--cyan)" }} />
+        <p className={`font-mono text-[15px] ${idle ? "text-dim" : "text-hi"}`}>{action ?? "— loop idle"}</p>
+      </div>
+      {note ? <p className="mt-2 pl-5 text-[13px] leading-relaxed text-body">{note}</p> : null}
     </section>
   );
 }

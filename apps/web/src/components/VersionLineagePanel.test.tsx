@@ -12,9 +12,9 @@ describe("VersionLineagePanel (jsdom, no network)", () => {
     const v1 = screen.getByText("v1").closest("li")!;
     const v2 = screen.getByText("v2").closest("li")!;
 
-    // Root has no indent; child is indented one level (16px per depth).
-    expect(v1.style.paddingLeft).toBe("0px");
-    expect(v2.style.paddingLeft).toBe("16px");
+    // Root has no indent; child is indented one level (18px per depth).
+    expect(v1.style.marginLeft).toBe("0px");
+    expect(v2.style.marginLeft).toBe("18px");
 
     // Only the promoted root carries the badge.
     expect(within(v1).queryByText("promoted")).toBeTruthy();

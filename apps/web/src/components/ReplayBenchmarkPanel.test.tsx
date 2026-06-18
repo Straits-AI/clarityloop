@@ -43,19 +43,19 @@ describe("ReplayBenchmarkPanel (jsdom, no network)", () => {
     expect(safeCells[1]).toHaveTextContent("0.25");
     expect(safeCells[2]).toHaveTextContent("1");
     expect(safeCells[3]).toHaveTextContent("+0.75");
-    expect(safeCells[3].className).toContain("text-emerald-600");
+    expect(safeCells[3].className).toContain("text-go");
 
     // False-commit improving (lower) shows a negative delta in the "better" tone.
     const fcRow = screen.getByText("False commit").closest("tr")!;
     const fcDelta = within(fcRow).getAllByRole("cell")[3];
     expect(fcDelta).toHaveTextContent("-0.25");
-    expect(fcDelta.className).toContain("text-emerald-600");
+    expect(fcDelta.className).toContain("text-go");
 
     const footer = screen.getByText("promote");
-    expect(footer.className).toContain("text-emerald-600");
+    expect(footer.className).toContain("v-go");
   });
 
-  it("tones a reject decision in rose", () => {
+  it("tones a reject decision in the stop signal", () => {
     render(
       <ReplayBenchmarkPanel
         report={report}
@@ -63,6 +63,6 @@ describe("ReplayBenchmarkPanel (jsdom, no network)", () => {
       />,
     );
     const tag = screen.getByText("reject");
-    expect(tag.className).toContain("text-rose-600");
+    expect(tag.className).toContain("v-stop");
   });
 });
