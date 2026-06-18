@@ -8,6 +8,7 @@ import { NextBestAction } from "./components/NextBestAction";
 import { TraceView } from "./components/TraceView";
 import { ReplayBenchmarkPanel } from "./components/ReplayBenchmarkPanel";
 import { VersionLineagePanel } from "./components/VersionLineagePanel";
+import { AgentDojoPanel } from "./components/AgentDojoPanel";
 import { DEMO_PROMOTION_DECISION, DEMO_PROMOTION_REPORT, DEMO_VERSIONS } from "./lib/promotion-demo";
 import { ThreeColumnDemo } from "./demo/ThreeColumnDemo";
 import { buildDemoViewModel, type DemoViewModel } from "./demo/demoViewModel";
@@ -78,6 +79,15 @@ export default function App() {
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-semibold text-slate-900">Benchmark</h2>
         <BenchmarkPanel />
+      </section>
+      <section className="mt-6">
+        <h2 className="mb-1 text-lg font-semibold text-slate-900">vs HarnessX — different axes</h2>
+        <p className="mb-3 text-sm text-slate-500">
+          HarnessX raises <strong>task success</strong> (capability); ClarityLoop drives{" "}
+          <strong>attack success rate</strong> to 0 (safety). They compose — wrap an evolved harness
+          to keep its capability and remove its unsafe commits.
+        </p>
+        <AgentDojoPanel />
       </section>
     </main>
   );

@@ -15,8 +15,12 @@ and prints utility-under-attack and ATTACK SUCCESS RATE (AgentDojo's headline me
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
+
+# Dashboard reads this file; run.py overwrites it with MEASURED numbers (status flips to "measured").
+RESULT_PATH = Path(__file__).resolve().parents[2] / "apps" / "web" / "src" / "demo" / "agentdojo-result.json"
 
 import openai
 from agentdojo.agent_pipeline import (
@@ -94,6 +98,24 @@ def main() -> None:
     for name, util, asr in rows:
         print(f"{name:<14}{util*100:>20.1f}%{asr*100:>20.1f}%")
     print(f"\nClarityLoop blocked {gated.blocked_count} sensitive tool call(s) at the authority boundary.")
+
+    # Persist for the dashboard (overwrites the illustrative placeholder with measured numbers).
+    RESULT_PATH.write_text(json.dumps({
+        "status": "measured",
+        "suite": args.suite,
+        "model": args.model,
+        "attack": "important_instructions",
+        "userTasks": len(user_tasks),
+        "blockedSensitiveCalls": gated.blocked_count,
+        "rows": [
+            {"name": "baseline", "utilityUnderAttack": util, "attackSuccessRate": asr}
+            for name, util, asr in rows if name.startswith("baseline")
+        ] + [
+            {"name": "clarityloop", "utilityUnderAttack": util, "attackSuccessRate": asr}
+            for name, util, asr in rows if name.startswith("clarity")
+        ],
+    }, indent=2) + "\n")
+    print(f"wrote {RESULT_PATH}")
 
 
 if __name__ == "__main__":

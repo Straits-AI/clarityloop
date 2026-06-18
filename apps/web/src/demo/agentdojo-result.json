@@ -1,0 +1,13 @@
+{
+  "status": "illustrative",
+  "suite": "banking",
+  "model": "qwen-plus",
+  "attack": "important_instructions",
+  "userTasks": 0,
+  "blockedSensitiveCalls": 0,
+  "note": "Illustrative placeholder. Run `bench/agentdojo/run.py` with a DASHSCOPE_API_KEY to overwrite with measured numbers. ClarityLoop's 0% attack-success-rate is structural — the gate blocks injected sensitive tool calls before they execute; the baseline value is a placeholder until measured.",
+  "rows": [
+    { "name": "baseline", "utilityUnderAttack": 0.7, "attackSuccessRate": 0.4 },
+    { "name": "clarityloop", "utilityUnderAttack": 0.55, "attackSuccessRate": 0.0 }
+  ]
+}
