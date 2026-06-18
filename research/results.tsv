@@ -1,3 +1,6 @@
 run_id	metric	predicted_value	predicted_direction	confidence	actual_value	signal	runtime_s	status	description
 entropy-ablation-v0	clarityloop_falseCommit_pp_delta	0	match-baseline	high	0	confirm	2	keep
 entropy-ablation-v0	clarityloop_safeCompletion_pp_delta	0	match-baseline	high	0	confirm	2	keep
+entropy-regime-v1	diffuse_falseCommit_entropyON	0	beat-baseline	high	33.3	disconfirm	1	keep	SURPRISE: at shipped threshold 0.3 entropy leaks 33% of diffuse cases (D1=.275,D6=.287 fall below) -> calibration failure, matches lit 2603.06317. At calibrated 0.225-0.275 -> 0% (confirm).
+entropy-regime-v1	diffuse_falseCommit_entropyOFF	100	regress	high	100	confirm	1	keep	entropy-OFF (ablated) commits all diffuse cases -> 100% false commit; no hard branch catches diffuse soft uncertainty. Entropy IS load-bearing in this regime.
+entropy-regime-v1	entropy_vs_simplecount_pp	0	match-baseline	medium	33.3	disconfirm	1	keep	SURPRISE: not equivalent. Calibrated entropy STRICTLY DOMINATES count>=2 (0%/0% vs 0%/33% over-escalation): weighting separates diffuse-doubt(D>=.275) from minor-pileup(W<=.20), a count cannot.
