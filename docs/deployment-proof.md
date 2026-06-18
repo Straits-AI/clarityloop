@@ -34,10 +34,11 @@ $ curl -X POST .../score -d '{...latent state...}'
 $ curl ".../demo/entropy-stream?paceMs=0"
 event: entropy
 data: {"step":0,"phase":"scored", ... }
+
+# Live Qwen WorkflowSpec generation (Qwen outline -> deterministic governed spec):
+$ curl -X POST .../workflow -d '{"request":"need 120 cartons urgently next week...","domain":"quote"}'
+{"runId":"run_...","workflowSpec":{"name":"Urgent Carton Quote Processing","trigger":{"domain":"quote"},
+ "steps":[{"action":{"type":"tool","toolName":"retrieve_memory"}}, ...]}}
 ```
 
-Both mandatory requirements are satisfied: the **backend runs on Alibaba Cloud**, and it **uses Qwen models via Qwen Cloud (Model Studio / DashScope)**.
-
-## Known issue
-
-- `POST /workflow` (live Qwen *structured* WorkflowSpec generation) can return 500 when the model output does not conform to the strict `WorkflowSpec` zod schema. The deterministic demo path (`/demo/entropy-stream`) and the in-process ClarityLoopBench do not depend on it. Hardening the workflow-designer prompt/parse is tracked as a follow-up.
+Both mandatory requirements are satisfied: the **backend runs on Alibaba Cloud**, and it **uses Qwen models via Qwen Cloud (Model Studio / DashScope)**. Every route — including live Qwen workflow generation — is verified working against the public endpoint.
