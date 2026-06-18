@@ -96,13 +96,21 @@ function wilson(k: number, n: number): [number, number] {
 }
 
 const TRIALS = 2000;
-function falseCommitRate(channel: "emit" | "extract", p: number): { rate: number; ci: [number, number] } {
+// model: "iid" drops each targeted-channel signal independently with prob p (benign noise — optimistic);
+//        "correlated" models a successful injection that, with prob p per case, suppresses the ENTIRE
+//        targeted channel for that case at once (the realistic adversarial threat).
+function falseCommitRate(channel: "emit" | "extract", p: number, model: "iid" | "correlated"): { rate: number; ci: [number, number] } {
   let commitsCount = 0;
   const n = TRIALS * population.length;
   for (let t = 0; t < TRIALS; t++) {
     for (const c of population) {
       const dropped = new Set<Defense>();
-      for (const def of c.defenses) if (CHANNEL[def] === channel && rnd() < p) dropped.add(def);
+      if (model === "correlated") {
+        const breached = rnd() < p; // one injection compromises the whole channel for this case
+        if (breached) for (const def of c.defenses) if (CHANNEL[def] === channel) dropped.add(def);
+      } else {
+        for (const def of c.defenses) if (CHANNEL[def] === channel && rnd() < p) dropped.add(def);
+      }
       if (commits(c, dropped)) commitsCount++;
     }
   }
@@ -110,13 +118,24 @@ function falseCommitRate(channel: "emit" | "extract", p: number): { rate: number
 }
 
 console.log(`emission-robustness: ${population.length} unsafe cases, ${TRIALS} trials/point (n=${TRIALS * population.length}/point), seed=20260618`);
-console.log("\np      EMIT-channel infidelity        EXTRACT-channel infidelity");
-console.log("       false-commit% [95% CI]         false-commit% [95% CI]");
+for (const model of ["iid", "correlated"] as const) {
+  console.log(`\n[${model.toUpperCase()} corruption]  p     EMIT false-commit% [95% CI]      EXTRACT false-commit% [95% CI]`);
+  for (const p of [0, 0.1, 0.25, 0.5, 0.75, 1.0]) {
+    const e = falseCommitRate("emit", p, model), x = falseCommitRate("extract", p, model);
+    console.log(`                   ${p.toFixed(2)}   ${e.rate.toFixed(1).padStart(5)}  [${e.ci[0].toFixed(1)}, ${e.ci[1].toFixed(1)}]            ${x.rate.toFixed(1).padStart(5)}  [${x.ci[0].toFixed(1)}, ${x.ci[1].toFixed(1)}]`);
+  }
+}
+// Cross-channel redundancy under FULL single-channel adversarial breach (p=1, correlated):
+// do the 7 cross-channel-redundant cases survive when an attacker fully owns ONE channel?
+const fullEmit = falseCommitRate("emit", 1.0, "correlated");
+const fullExtract = falseCommitRate("extract", 1.0, "correlated");
+console.log(`\ncross-channel redundancy test (attacker fully owns ONE channel, p=1 correlated):`);
+console.log(`  emit fully breached    -> false-commit ${fullEmit.rate.toFixed(1)}% (only emit-only cases fall; redundant survive via extract)`);
+console.log(`  extract fully breached -> false-commit ${fullExtract.rate.toFixed(1)}% (only extract-only cases fall; redundant survive via emit)`);
 const summary: Record<string, { emit: number; extract: number }> = {};
 for (const p of [0, 0.1, 0.25, 0.5, 0.75, 1.0]) {
-  const e = falseCommitRate("emit", p), x = falseCommitRate("extract", p);
+  const e = falseCommitRate("emit", p, "iid"), x = falseCommitRate("extract", p, "iid");
   summary[p] = { emit: Number(e.rate.toFixed(1)), extract: Number(x.rate.toFixed(1)) };
-  console.log(`${p.toFixed(2)}   ${e.rate.toFixed(1).padStart(5)}  [${e.ci[0].toFixed(1)}, ${e.ci[1].toFixed(1)}]        ${x.rate.toFixed(1).padStart(5)}  [${x.ci[0].toFixed(1)}, ${x.ci[1].toFixed(1)}]`);
 }
 // composition of the population by defense channel (the structural explanation)
 const byChan = { "emit-only": 0, "extract-only": 0, redundant: 0 };

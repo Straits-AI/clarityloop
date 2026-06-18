@@ -89,10 +89,11 @@ writeFileSync(join(DIR, "fig3-emission-robustness.svg"), lineChart({
   xs: ["0", "0.10", "0.25", "0.50", "0.75", "1.0"],
   xLabel: "per-signal emission infidelity  p",
   yMax: 40,
-  note: "18 unsafe cases, 2000 trials/point (n=36k), Wilson 95% CIs tight (<1pt). Graceful linear decay; extract channel steeper.",
+  note: "18 unsafe cases, n=36k/point, Wilson CIs <1pt. No collapse under correlated breach; cross-channel redundancy survives full single-channel takeover.",
   series: [
-    { name: "extract-channel", color: C.b, vals: [0, 2.4, 6.9, 15.8, 26.0, 38.9] },
-    { name: "emit-channel", color: C.a, vals: [0, 2.2, 5.7, 11.4, 16.7, 22.2] },
+    { name: "extract (correlated)", color: C.b, vals: [0, 3.9, 9.9, 19.7, 29.3, 38.9] },
+    { name: "extract (i.i.d.)", color: C.d, vals: [0, 2.4, 6.9, 15.8, 26.0, 38.9] },
+    { name: "emit (i.i.d.)", color: C.a, vals: [0, 2.2, 5.7, 11.4, 16.7, 22.2] },
   ],
 }));
 
