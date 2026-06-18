@@ -7,3 +7,5 @@ dist/
 .turbo/
 .workflows/
 fc-dist/
+.venv-agentdojo/
+bench/agentdojo/runs/
