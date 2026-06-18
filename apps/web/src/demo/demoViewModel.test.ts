@@ -9,11 +9,12 @@ const report: ScoringReport = {
   evidenceThreshold: 0.7,
   baselines: [
     { baseline: "bare_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.92, policyViolationRate: 0.14, safeCompletionRate: 0.06, approvalBurden: 0, evidenceCoverage: 0.5, costPerSafeCompletion: 360 },
-    { baseline: "dynamic_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.33, policyViolationRate: 0.14, safeCompletionRate: 0.6, approvalBurden: 0, evidenceCoverage: 0.74, costPerSafeCompletion: 80 },
-    { baseline: "fixed_gate", total: 36, taskCompletionRate: 0.33, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.33, approvalBurden: 0.33, evidenceCoverage: 0.5, costPerSafeCompletion: 110 },
-    { baseline: "clarityloop", total: 36, taskCompletionRate: 0.92, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.92, approvalBurden: 0.25, evidenceCoverage: 0.85, costPerSafeCompletion: 90 },
+    { baseline: "dynamic_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.56, policyViolationRate: 0.14, safeCompletionRate: 0.4, approvalBurden: 0, evidenceCoverage: 0.7, costPerSafeCompletion: 100 },
+    { baseline: "harness_evolution", total: 36, taskCompletionRate: 1, falseCommitRate: 0.36, policyViolationRate: 0.14, safeCompletionRate: 0.6, approvalBurden: 0, evidenceCoverage: 0.74, costPerSafeCompletion: 80 },
+    { baseline: "fixed_gate", total: 36, taskCompletionRate: 0.31, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.31, approvalBurden: 0.22, evidenceCoverage: 0.5, costPerSafeCompletion: 110 },
+    { baseline: "clarityloop", total: 36, taskCompletionRate: 0.86, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.86, approvalBurden: 0.22, evidenceCoverage: 0.82, costPerSafeCompletion: 90 },
   ],
-  comparison: { constraintTax: 0.08, safetyGain: 0.33 },
+  comparison: { constraintTax: 0.14, safetyGain: 0.36 },
 };
 
 const promotion: PromotionReport = {
@@ -27,7 +28,7 @@ const promotion: PromotionReport = {
 describe("buildDemoViewModel", () => {
   it("builds three columns from the report and promotion report", () => {
     const vm = buildDemoViewModel(report, promotion);
-    expect(vm.baseline.title).toContain("Dynamic Qwen");
+    expect(vm.baseline.title).toContain("Harness Evolution");
     expect(vm.clarityloop.title).toContain("ClarityLoop");
     expect(vm.promotion.title).toContain("Promotion");
   });
@@ -35,8 +36,8 @@ describe("buildDemoViewModel", () => {
   it("surfaces false-commit and safety-gain figures as percentages", () => {
     const vm = buildDemoViewModel(report, promotion);
     const baselineFalseCommit = vm.baseline.rows.find((r) => r.label === "False commit rate");
-    const claritySafetyGain = vm.clarityloop.rows.find((r) => r.label === "Safety gain vs dynamic");
-    expect(baselineFalseCommit?.value).toBe("33.0%");
-    expect(claritySafetyGain?.value).toBe("33.0%");
+    const claritySafetyGain = vm.clarityloop.rows.find((r) => r.label === "Safety gain vs harness");
+    expect(baselineFalseCommit?.value).toBe("36.0%"); // harness_evolution false-commit
+    expect(claritySafetyGain?.value).toBe("36.0%");
   });
 });

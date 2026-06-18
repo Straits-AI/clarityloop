@@ -15,18 +15,19 @@ function metricsFor(report: ScoringReport, baseline: BaselineMetrics["baseline"]
 
 /** Map a scoring report + promotion report into the three demo columns (design spec §10). */
 export function buildDemoViewModel(report: ScoringReport, promotion: PromotionReport): DemoViewModel {
-  const dynamic = metricsFor(report, "dynamic_qwen");
+  // Compare against the strongest PERFORMANCE baseline (HarnessX-like) — the post-HarnessX wedge.
+  const perf = metricsFor(report, "harness_evolution");
   const clarity = metricsFor(report, "clarityloop");
 
   const baseline: DemoColumn = {
-    title: "Baseline (Dynamic Qwen)",
-    subtitle: "Generates and runs a workflow, commits without governance",
+    title: "Baseline (Harness Evolution)",
+    subtitle: "HarnessX-like: resolves gaps, maximizes completion — but no risk gate",
     rows: [
-      { label: "Task completion", value: pct(dynamic.taskCompletionRate) },
-      { label: "False commit rate", value: pct(dynamic.falseCommitRate) },
-      { label: "Policy violation rate", value: pct(dynamic.policyViolationRate) },
-      { label: "Evidence coverage", value: pct(dynamic.evidenceCoverage) },
-      { label: "Approval burden", value: pct(dynamic.approvalBurden) },
+      { label: "Task completion", value: pct(perf.taskCompletionRate) },
+      { label: "False commit rate", value: pct(perf.falseCommitRate) },
+      { label: "Policy violation rate", value: pct(perf.policyViolationRate) },
+      { label: "Evidence coverage", value: pct(perf.evidenceCoverage) },
+      { label: "Approval burden", value: pct(perf.approvalBurden) },
     ],
   };
 
@@ -39,8 +40,8 @@ export function buildDemoViewModel(report: ScoringReport, promotion: PromotionRe
       { label: "Safe completion rate", value: pct(clarity.safeCompletionRate) },
       { label: "Evidence coverage", value: pct(clarity.evidenceCoverage) },
       { label: "Approval burden", value: pct(clarity.approvalBurden) },
-      { label: "Constraint tax vs dynamic", value: pct(report.comparison.constraintTax) },
-      { label: "Safety gain vs dynamic", value: pct(report.comparison.safetyGain) },
+      { label: "Constraint tax vs harness", value: pct(report.comparison.constraintTax) },
+      { label: "Safety gain vs harness", value: pct(report.comparison.safetyGain) },
     ],
   };
 
