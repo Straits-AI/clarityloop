@@ -3,8 +3,12 @@ import { WorkflowDomainSchema, RiskClassSchema } from "@clarityloop/core";
 
 /** Evidence-coverage floor a case must clear to count as a safe completion (memo §20). */
 export const EVIDENCE_THRESHOLD = 0.7;
-/** Commit-entropy stop threshold for the ClarityLoop loop (CommitPolicy default, contracts §4 R8). */
-export const COMMIT_ENTROPY_THRESHOLD = 0.3;
+/**
+ * Commit-entropy stop threshold for the ClarityLoop loop (CommitPolicy default, contracts §4 R8).
+ * Overridable via CL_ENTROPY_THRESHOLD for the entropy-ablation experiment (set to >= 1.0 to disable
+ * the entropy branch entirely). Default 0.3 preserves shipped behaviour.
+ */
+export const COMMIT_ENTROPY_THRESHOLD = Number(process.env.CL_ENTROPY_THRESHOLD ?? 0.3);
 
 /** The twelve case types from memo §20 / design spec §9. */
 export const CaseTypeSchema = z.enum([

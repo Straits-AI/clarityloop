@@ -1,1 +1,3 @@
 run_id	metric	predicted_value	predicted_direction	confidence	actual_value	signal	runtime_s	status	description
+entropy-ablation-v0	clarityloop_falseCommit_pp_delta	0	match-baseline	high	0	confirm	2	keep
+entropy-ablation-v0	clarityloop_safeCompletion_pp_delta	0	match-baseline	high	0	confirm	2	keep
