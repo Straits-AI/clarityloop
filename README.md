@@ -1,24 +1,30 @@
 # ClarityLoop
 
-**Uncertainty-guided autopilot for business workflows.**
+**Uncertainty-aware release control for agent-authored business workflows.**
 
-ClarityLoop lets Qwen agents generate and execute business workflows dynamically, but does
-not blindly trust them. It maintains a compact latent workflow state, estimates operational
+Agents — and harness-evolution systems like HarnessX — are getting good at *generating and
+improving* workflows. ClarityLoop is the layer that decides **when an evolved workflow is clear
+enough, safe enough, and authorized enough to commit, escalate, or promote** into a governed
+business procedure. It maintains a compact latent workflow state, estimates operational
 uncertainty **deterministically**, gathers the next best evidence, and only commits or promotes
-work when uncertainty, risk, and evidence thresholds are satisfied.
+when uncertainty, risk, and evidence thresholds are satisfied.
 
+> **Harnesses evolve. ClarityLoop decides what ships.**
 > Let agents explore freely. Loop for missing signal. Commit only when uncertainty is low
 > enough for the business risk.
 
 Built for the **Global AI Hackathon Series with Qwen Cloud — Track 4: Autopilot Agent**.
+Category: **Agent Workflow Release Control** (not a harness foundry — see
+[`memo.md` §HarnessX](memo.md)).
 
 ---
 
 ## Status
 
-**The full vertical slice is built and tested** — 243 tests passing across 9 packages, with
-build + typecheck green. The only remaining item is the human-gated Alibaba Cloud onboarding +
-deploy (Phase 0), which cannot be automated.
+**Built, tested, and DEPLOYED LIVE on Alibaba Cloud.** The full vertical slice runs on
+**Function Compute** (Singapore), calling Qwen via Model Studio — both mandatory competition
+requirements are met (see [`docs/deployment-proof.md`](docs/deployment-proof.md)). Public
+endpoint: `https://clarityloop-api-jewijtekcx.ap-southeast-1.fcapp.run`.
 
 | Package / area | State |
 | --- | --- |
@@ -32,21 +38,27 @@ deploy (Phase 0), which cannot be automated.
 | `@clarityloop/evals` — ClarityLoopBench (36 cases), baselines, replay benchmark, promotion gate | ✅ (34 tests) |
 | `@clarityloop/api` — Hono app: workflow gen, latent loop, SSE, commit/approval/improve/promote routes | ✅ (30 tests) |
 | `@clarityloop/web` — dashboard: entropy heatmap, panels, approval, replay, lineage, 3-column demo | ✅ (26 tests) |
-| Docker + Compose (api + Postgres) | ✅ (image builds) |
-| Alibaba ECS deploy | ⏳ pending Phase 0 onboarding (human-gated) |
+| Docker + Compose (api + Postgres) — portable second target | ✅ (image builds) |
+| **Deployed live on Alibaba Function Compute (in-memory build)** | ✅ |
 
 ### Benchmark headline (ClarityLoopBench, 36 cases — `pnpm --filter @clarityloop/evals bench`)
 
-| Baseline | Completion | False commit | Approval burden |
-| --- | --- | --- | --- |
-| Bare Qwen | 100% | **92%** | 0% |
-| Dynamic Qwen Workflow | 100% | **28%** | 0% |
-| Fixed Gate | 31% | 0% | 31% |
-| **ClarityLoop** | **94%** | **0%** | **22%** |
+Every metric is measured by **one uniform scorer** applied identically to all baselines; Fixed
+Gate and ClarityLoop run the **same shipped `runCommitGate`**, differing only by the evidence loop.
 
-ClarityLoop matches the fixed gate's 0% false-commit rate but completes 94% vs 31% of tasks with
-*lower* approval burden — it is safe without being dumb, because it loops for missing signal
-before blocking. (Safety gain vs dynamic agent: 28 points; constraint tax vs dynamic: 6 points.)
+| Baseline | Completion | False commit | Approval |
+| --- | --- | --- | --- |
+| Bare Qwen | 100% | 92% | 0% |
+| Dynamic Qwen Workflow | 100% | 56% | 0% |
+| **Harness Evolution** (HarnessX-like, no risk gate) | 100% | **36%** | 0% |
+| Fixed Gate | 31% | 0% | 22% |
+| **ClarityLoop** | **86%** | **0%** | 22% |
+
+The honest, defensible claim: ClarityLoop matches the fixed gate's **0% false-commit** but
+**~triples its completion (86% vs 31%)** by resolving the gaps a fixed gate bounces; and versus a
+performance-optimized *evolved harness*, it gives up just **14% completion to eliminate all 36% of
+unsafe commits**. That trade — *small constraint tax for a large safety gain* — is the whole
+thesis: **harness evolution buys performance; the risk gate buys safety.**
 
 ---
 
@@ -84,7 +96,8 @@ See [`docs/architecture.md`](docs/architecture.md) for the full system diagram, 
   component from that structure. This is the auditable, trustworthy core.
 - **Portable by interface.** Object storage via the S3 API (OSS ↔ R2), relational state behind
   a repository pattern (Postgres ↔ SQLite/D1), the API on Hono (Node ↔ Workers), and the model
-  behind a `ModelProvider` abstraction (Qwen via DashScope). Submission ships on Alibaba ECS.
+  behind a `ModelProvider` abstraction (Qwen via DashScope). **Submission ships live on Alibaba
+  Function Compute** (serverless, scale-to-zero, in-memory build); ECS/Docker is a portable target.
 - **Soft autonomy in the sandbox, hard governance at the authority boundary.** Planning,
   drafting, and read-only tool use are unconstrained; only irreversible/external commits and
   workflow promotion are gated.

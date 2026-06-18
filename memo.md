@@ -1523,3 +1523,46 @@ The winning story:
 
 This is specific, current, technically differentiated, and demoable within the Qwen hackathon timeline.
 
+---
+
+## 31. Research Update: HarnessX (and the repositioning it forces)
+
+HarnessX (*A Composable, Adaptive, and Evolvable Agent Harness Foundry*, arXiv:2606.14249, 12 June
+2026) introduces typed harness primitives, a substitution algebra, and **AEGIS**, a trace-driven
+multi-agent harness-evolution engine, reporting **+14.5% average** (up to +44%) across ALFWorld,
+GAIA, WebShop, tau³-Bench, and SWE-bench Verified. Its codebase is not yet released.
+
+**Implication.** "Self-evolving harness" is no longer a unique USP — HarnessX owns that space and
+has stronger benchmark evidence. ClarityLoop must therefore **not** lead with "we evolve workflows
+from traces." Instead:
+
+> **HarnessX optimizes harness performance. ClarityLoop decides when an evolved workflow is clear
+> enough, safe enough, and authorized enough to become a business procedure.**
+
+**Revised category:** **Agent Workflow Release Control** — not a harness foundry, not a dynamic
+workflow engine. **Updated USP:** *Harnesses evolve. ClarityLoop decides what ships.* For the
+hackathon: *Qwen generates and improves workflows; ClarityLoop uses uncertainty-guided loops to
+decide when to gather evidence, ask a human, commit, or promote.*
+
+**What HarnessX validates:** harness/runtime is a first-class object; static hand-crafted harnesses
+are obsolescent; execution traces should drive improvement; typed primitives matter. ClarityLoop
+borrows the architectural inspiration (typed governance primitives, a `WorkflowPatch` algebra,
+a small AEGIS-like trace→patch→replay→promote loop) but **not** the product category, and does
+**not** close the loop into model training (out of MVP scope).
+
+**What HarnessX does not foreground** (our wedge): when is a workflow safe to commit externally;
+ask-for-evidence vs ask-a-human; preventing safe-but-dumb behavior; measuring constraint tax;
+memory bloat; promoting/rejecting workflows under business risk; auditable procedure versioning;
+sandbox-autonomy vs authority-boundary actions.
+
+**Benchmark consequence (implemented).** ClarityLoopBench now includes a fifth baseline,
+**`harness_evolution`** — a performance-optimized, HarnessX-like agent that resolves gaps well but
+has **no risk gate**. The sharpened claim is no longer "we complete more than a fixed gate"; it is:
+
+> Against a performance-optimized evolved harness, ClarityLoop sacrifices a little raw completion
+> (constraint tax) to **eliminate its unsafe commits** (safety gain) — risk-adjusted release
+> control, not raw success maximization.
+
+Measured result: `harness_evolution` 100% completion / 36% false-commit vs `clarityloop` 86% / 0%
+— a 14-point completion cost for a 36-point safety gain, scored by one uniform rubric.
+
