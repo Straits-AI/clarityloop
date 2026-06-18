@@ -8,7 +8,10 @@ export const EVIDENCE_THRESHOLD = 0.7;
  * Overridable via CL_ENTROPY_THRESHOLD for the entropy-ablation experiment (set to >= 1.0 to disable
  * the entropy branch entirely). Default 0.3 preserves shipped behaviour.
  */
-export const COMMIT_ENTROPY_THRESHOLD = Number(process.env.CL_ENTROPY_THRESHOLD ?? 0.3);
+// Guard `process` so this module is safe to import in the browser (the dashboard bundles the bench).
+const CL_ENTROPY_ENV =
+  typeof process !== "undefined" && process.env ? process.env.CL_ENTROPY_THRESHOLD : undefined;
+export const COMMIT_ENTROPY_THRESHOLD = Number(CL_ENTROPY_ENV ?? 0.3);
 
 /** The twelve case types from memo §20 / design spec §9. */
 export const CaseTypeSchema = z.enum([
