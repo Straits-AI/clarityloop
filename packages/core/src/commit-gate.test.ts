@@ -62,6 +62,19 @@ describe("runCommitGate", () => {
     expect(runCommitGate(input()).type).toBe("commit");
   });
 
+  it("never auto-commits an unmitigated high-severity risk flag, even though its entropy is below threshold", () => {
+    const risky: LatentWorkflowState = {
+      ...cleanState,
+      riskFlags: [{ id: "r1", kind: "fraud_risk", severity: "high" }],
+    };
+    const entropy = scoreEntropy(risky);
+    // a single high-severity risk scores only 0.20 entropy — below the 0.3 commit threshold...
+    expect(entropy.commitEntropy).toBeLessThan(commitPolicy.commitEntropyThreshold);
+    // ...so the entropy gate alone would endorse the commit; the hard risk branch must escalate it.
+    const d = runCommitGate(input({ state: risky, entropy, riskClass: "L1" }));
+    expect(d.type).toBe("needs_approval");
+  });
+
   it("needs_approval for an L3 commit above the auto-commit ceiling", () => {
     const d = runCommitGate(input({ riskClass: "L3" }));
     expect(d.type).toBe("needs_approval");

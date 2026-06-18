@@ -85,6 +85,15 @@ export function runCommitGate(input: CommitGateInput): CommitDecision {
     }
   }
 
+  // High-severity risk hard gate: an unmitigated high-severity risk flag (e.g. fraud risk) NEVER
+  // auto-commits, regardless of the residual commit entropy. A single high-severity flag scores
+  // only 0.20 entropy — below the commit threshold — so without this branch the entropy gate alone
+  // would endorse the commit. The named uncertainty signal must not silently green-light real risk.
+  const highRisk = state.riskFlags.filter((f) => f.severity === "high");
+  if (highRisk.length > 0) {
+    reasons.push(`unmitigated high-severity risk flag(s): ${highRisk.map((f) => f.kind).join(", ")}`);
+  }
+
   // Evidence coverage gate: a blocking evidence_coverage_threshold failure (coverage below the
   // workflow's minimumCoverageForCommit) or the numeric coverage below the policy's approval
   // threshold routes to a human rather than committing on entropy alone.
