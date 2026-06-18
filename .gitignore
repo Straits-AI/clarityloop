@@ -9,3 +9,19 @@ dist/
 fc-dist/
 .venv-agentdojo/
 bench/agentdojo/runs/
+
+# voice-clone TTS env + demo-video pipeline artifacts (heavy / personal voice data)
+.venv-voxcpm/
+apps/web/e2e/recordings/
+apps/web/e2e/frames/
+apps/web/e2e/qa/
+apps/web/e2e/audio/
+apps/web/e2e/audio_trim/
+apps/web/e2e/audio_final/
+apps/web/e2e/audio_placeholder/
+apps/web/e2e/assets/
+apps/web/e2e/video/node_modules/
+apps/web/e2e/video/public/
+apps/web/e2e/output/*.mp4
+test-results/
+playwright-report/
