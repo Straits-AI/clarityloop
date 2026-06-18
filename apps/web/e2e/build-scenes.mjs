@@ -22,7 +22,7 @@ const ORDER = [
   { clip: "c5_compose", audioId: "s5_compose", index: "04", label: "Composes with HarnessX", clipStartSec: 7.5 },
 ];
 
-const TAIL = 0.55; // seconds of breathing room after the voice ends
+const TAIL = 1.3; // UI-only hold after the voice ends (breathing room)
 
 function splitCaptions(text, frames) {
   const parts = text.split(/(?<=[.?!])\s+/).map((s) => s.trim()).filter(Boolean);

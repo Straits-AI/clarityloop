@@ -1,77 +1,70 @@
 #!/usr/bin/env python
-"""Voice-cloned narration via VoxCPM2 (voxcpm 2.0.3).
+"""Voice-cloned narration via VoxCPM2 — using the proven `reference_wav_path` method.
 
-Reads a JSON list of {id, text} narration lines and synthesizes each to a WAV,
-cloned from a reference clip (prompt_wav + prompt_text). Outputs 24kHz mono WAV
-plus a manifest with per-line durations (so the video compiler can sync clips).
+Mirrors the working approach in ../myposts: structurally-isolated voice cloning via
+`reference_wav_path` (NOT prompt_wav_path+prompt_text continuation mode, which inherits the
+reference's prosody and produces artifacts), plus a parenthetical voice-control prompt that
+sets delivery + pace at generation time (so no post-hoc time-stretch is needed).
 
 Usage:
-  python tts_voxcpm.py --script narration.json --ref assets/voice-ref-16s.wav \
-      --ref-text assets/voice-ref.txt --out audio/
+  python tts_voxcpm.py --script narration.json --ref assets/voice-ref-16s.wav --out audio/ --device cpu
 """
-import argparse, json, os, sys, wave
+import argparse, json, os
 import numpy as np
+import soundfile as sf
 
-SR = 24000  # VoxCPM output sample rate
-
-
-def write_wav(path: str, wav: np.ndarray, sr: int = SR) -> float:
-    wav = np.clip(wav, -1.0, 1.0)
-    pcm = (wav * 32767.0).astype("<i2")
-    with wave.open(path, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(sr)
-        w.writeframes(pcm.tobytes())
-    return len(wav) / sr
+# Delivery control (parenthetical prefix). "medium-fast pace" fixes the slow cloned cadence.
+VOICE_CONTROL = (
+    "calm confident professional narrator; clear technical delivery; medium-fast pace; "
+    "natural pauses; crisp emphasis on key numbers; not dramatic; not reading slides"
+)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--script", required=True)
-    ap.add_argument("--ref", required=True)
-    ap.add_argument("--ref-text", required=True)
+    ap.add_argument("--ref", required=True, help="reference WAV for voice cloning (reference_wav_path)")
+    ap.add_argument("--ref-text", default=None, help="unused in reference_wav_path mode; kept for compat")
     ap.add_argument("--out", required=True)
     ap.add_argument("--model", default="openbmb/VoxCPM2")
-    ap.add_argument("--device", default="mps")
+    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--steps", type=int, default=10)
+    ap.add_argument("--cfg-value", type=float, default=2.0)
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
-    ref_text = open(args.ref_text).read().strip()
-    lines = json.load(open(args.script)) if args.script.endswith(".json") else None
+    lines = json.load(open(args.script))
     if isinstance(lines, dict):
         lines = lines.get("lines", [])
 
     from voxcpm import VoxCPM
-    print(f"[voxcpm2] loading {args.model} on {args.device} …", flush=True)
-    try:
-        tts = VoxCPM.from_pretrained(args.model, device=args.device)
-    except Exception as e:  # MPS op gaps -> fall back to CPU
-        print(f"[voxcpm2] {args.device} load failed ({e}); falling back to cpu", flush=True)
-        tts = VoxCPM.from_pretrained(args.model, device="cpu")
-    print("[voxcpm2] model ready", flush=True)
+    print(f"[voxcpm2] loading {args.model} on {args.device} (no denoiser, no optimize) …", flush=True)
+    tts = VoxCPM.from_pretrained(
+        args.model, load_denoiser=False, optimize=False, local_files_only=True, device=args.device
+    )
+    sr = tts.tts_model.sample_rate
+    print(f"[voxcpm2] model ready · sample_rate={sr}", flush=True)
 
     manifest = []
     for i, line in enumerate(lines):
         lid, text = line["id"], line["text"].strip()
+        prompted = f"({VOICE_CONTROL}) {text}"
         out_path = os.path.join(args.out, f"{lid}.wav")
         print(f"[voxcpm2] ({i+1}/{len(lines)}) {lid}: {text[:60]}…", flush=True)
         wav = tts.generate(
-            text=text,
-            prompt_wav_path=args.ref,
-            prompt_text=ref_text,
-            cfg_value=2.0,
-            inference_timesteps=10,
-            normalize=True,
-            denoise=False,
-            retry_badcase=False,  # fp16/MPS can trip the badcase detector into endless retries
+            text=prompted,
+            reference_wav_path=str(args.ref),
+            cfg_value=args.cfg_value,
+            inference_timesteps=args.steps,
         )
-        dur = write_wav(out_path, np.asarray(wav, dtype=np.float32))
+        wav = np.asarray(wav, dtype=np.float32)
+        sf.write(out_path, wav, sr)
+        dur = len(wav) / sr
         manifest.append({"id": lid, "file": f"{lid}.wav", "duration": round(dur, 3), "text": text})
         print(f"[voxcpm2]   -> {out_path}  ({dur:.2f}s)", flush=True)
 
     json.dump(manifest, open(os.path.join(args.out, "manifest.json"), "w"), indent=2)
-    print("[voxcpm2] DONE manifest:", json.dumps(manifest, indent=2), flush=True)
+    print("[voxcpm2] DONE", json.dumps([(m["id"], m["duration"]) for m in manifest]), flush=True)
 
 
 if __name__ == "__main__":

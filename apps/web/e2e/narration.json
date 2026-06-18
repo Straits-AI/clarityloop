@@ -2,23 +2,23 @@
   "lines": [
     {
       "id": "s1_thesis",
-      "text": "Agents are getting good at generating business workflows. But capability isn't the hard part — governance is. Who decides when an agent's action is clear enough, safe enough, and authorized enough to actually ship? ClarityLoop is that layer. The model proposes; deterministic code decides."
+      "text": "Agents are good at generating workflows. The hard part isn't capability — it's governance. ClarityLoop decides when an action is clear, safe, and authorized enough to ship. The model proposes; deterministic code decides."
     },
     {
       "id": "s2_loop",
-      "text": "Take an ambiguous request — same as last time, a hundred and twenty cartons, supplier quote attached. We run ClarityLoop, streaming live from Alibaba Cloud. It keeps a structured state and scores operational entropy deterministically — the model never invents a number. The loop gathers the next best evidence, and the commit residual falls. Once the authority boundary is clear and the evidence is sufficient, the gate clears it to commit."
+      "text": "An ambiguous request. ClarityLoop scores operational entropy deterministically — the model never invents a number — and loops for evidence. The commit residual falls. Once the authority boundary is clear and the evidence is sufficient, the gate clears it to commit."
     },
     {
       "id": "s3_bench",
-      "text": "Does it actually work? On thirty-six cases, with one uniform scorer across five baselines, a capability-only agent commits unsafe actions thirty-six percent of the time. ClarityLoop drives that to zero, while keeping eighty-six percent task completion. And because the fixed gate and ClarityLoop share the same predicate, that completion gain is provably the evidence loop."
+      "text": "On thirty-six cases, one uniform scorer. A capability-only agent commits unsafe thirty-six percent of the time. ClarityLoop drives that to zero, at eighty-six percent completion — and the completion gain is provably the evidence loop."
     },
     {
       "id": "s4_promotion",
-      "text": "Workflows improve over time. ClarityLoop promotes a new version only when replay shows it is strictly safer than the one already in production — safety-weighted regression gating, with full version lineage."
+      "text": "Workflows improve. ClarityLoop promotes a new version only when replay proves it is strictly safer than the one in production. Safety-weighted regression gating."
     },
     {
       "id": "s5_compose",
-      "text": "And it composes. Harness evolution raises task success — capability. ClarityLoop drives attack-success to zero — safety. On the AgentDojo injection benchmark, the gate blocks unauthorized tool calls before they execute. Wrap any agent: keep its capability, remove its unsafe commits. Harnesses evolve. ClarityLoop decides what ships."
+      "text": "And it composes. Harnesses raise capability; ClarityLoop drives attack-success to zero. On AgentDojo, the gate blocks injected tool calls before they execute. Wrap any agent — keep its capability, remove its unsafe commits. ClarityLoop decides what ships."
     }
   ]
 }
