@@ -1,12 +1,43 @@
 # Alibaba Cloud Deployment Proof
 
-- **Provider:** Alibaba Cloud ECS, region <REGION>, instance <INSTANCE_ID>
-- **Public endpoint:** http://<ECS_PUBLIC_IP>:8080
-- **Health check:** `curl http://<ECS_PUBLIC_IP>:8080/health` -> `{"status":"ok"}` (screenshot below)
-- **Live Qwen call from Alibaba:** `curl http://<ECS_PUBLIC_IP>:8080/qwen/ping` -> reply containing `ok`
-- **Model Studio:** Qwen models accessed via DashScope from the deployed container.
+**Status: LIVE** — the ClarityLoop backend is deployed and running on Alibaba Cloud Function Compute.
 
-![ECS console](./img/ecs-console.png)
-![Health response](./img/health-curl.png)
+## Deployment
 
-> Status: PENDING — fill in the bracketed values and add the two screenshots under docs/img/ after executing infra/deploy-ecs.md against the Phase 0 ECS instance.
+- **Service:** Alibaba Cloud **Function Compute 3.0** (Web Function, Custom Runtime / Node.js 20)
+- **Region:** Singapore (`ap-southeast-1`)
+- **Function:** `clarityloop-api`
+- **Public endpoint:** `https://clarityloop-api-jewijtekcx.ap-southeast-1.fcapp.run`
+- **Scaling:** on-demand, **min instances = 0** (scales to zero → no idle cost); in-memory repositories (no VPC / no NAT gateway)
+- **Build:** `apps/api/src/server-fc.ts` bundled to a single file via `pnpm --filter @clarityloop/api build:fc`
+
+## "Use of Alibaba Cloud services and APIs" (code proof)
+
+- **Qwen via Alibaba Model Studio / DashScope:** [`packages/qwen/src/dashscope.ts`](../packages/qwen/src/dashscope.ts) — OpenAI-compatible client pointed at the workspace's dedicated DashScope endpoint (`…maas.aliyuncs.com/compatible-mode/v1`).
+- **Alibaba Object Storage Service (OSS):** [`packages/storage/src/oss-store.ts`](../packages/storage/src/oss-store.ts) — S3-compatible artifact store.
+
+## Verification (live, against the public endpoint)
+
+```
+$ curl https://clarityloop-api-jewijtekcx.ap-southeast-1.fcapp.run/health
+{"status":"ok"}
+
+# Live Qwen call FROM the Alibaba-hosted function (Qwen Cloud requirement):
+$ curl https://clarityloop-api-jewijtekcx.ap-southeast-1.fcapp.run/qwen/ping
+{"reply":"ok"}
+
+# Deterministic entropy scorer:
+$ curl -X POST .../score -d '{...latent state...}'
+{"taskEntropy":0,"evidenceEntropy":1,"actionEntropy":0.5,"policyEntropy":0,"memoryEntropy":0,"commitEntropy":0.25}
+
+# Hero demo: live SSE entropy stream (the heatmap source):
+$ curl ".../demo/entropy-stream?paceMs=0"
+event: entropy
+data: {"step":0,"phase":"scored", ... }
+```
+
+Both mandatory requirements are satisfied: the **backend runs on Alibaba Cloud**, and it **uses Qwen models via Qwen Cloud (Model Studio / DashScope)**.
+
+## Known issue
+
+- `POST /workflow` (live Qwen *structured* WorkflowSpec generation) can return 500 when the model output does not conform to the strict `WorkflowSpec` zod schema. The deterministic demo path (`/demo/entropy-stream`) and the in-process ClarityLoopBench do not depend on it. Hardening the workflow-designer prompt/parse is tracked as a follow-up.
