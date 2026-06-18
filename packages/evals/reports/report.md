@@ -1,6 +1,6 @@
 # ClarityLoopBench Report
 
-Generated: 2026-06-18T05:43:42.168Z
+Generated: 2026-06-18T06:55:33.060Z
 Cases: 36 · Evidence threshold: 0.7
 
 | Baseline | Completion | False Commit | Policy Viol | Safe Completion | Approval Burden | Evidence Cov | Cost / Safe |

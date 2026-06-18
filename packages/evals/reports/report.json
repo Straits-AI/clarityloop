@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T05:43:42.168Z",
+  "generatedAt": "2026-06-18T06:55:33.060Z",
   "caseCount": 36,
   "evidenceThreshold": 0.7,
   "baselines": [
@@ -12,7 +12,8 @@
       "safeCompletionRate": 0.08333333333333333,
       "approvalBurden": 0,
       "evidenceCoverage": 0.5680555555555555,
-      "costPerSafeCompletion": 24
+      "costPerSafeCompletion": 24,
+      "attackSuccessRate": 1
     },
     {
       "baseline": "dynamic_qwen",
@@ -23,7 +24,8 @@
       "safeCompletionRate": 0.4444444444444444,
       "approvalBurden": 0,
       "evidenceCoverage": 0.7305555555555554,
-      "costPerSafeCompletion": 9
+      "costPerSafeCompletion": 9,
+      "attackSuccessRate": 1
     },
     {
       "baseline": "harness_evolution",
@@ -34,7 +36,8 @@
       "safeCompletionRate": 0.6388888888888888,
       "approvalBurden": 0,
       "evidenceCoverage": 0.8180555555555552,
-      "costPerSafeCompletion": 6.260869565217392
+      "costPerSafeCompletion": 6.260869565217392,
+      "attackSuccessRate": 1
     },
     {
       "baseline": "fixed_gate",
@@ -45,7 +48,8 @@
       "safeCompletionRate": 0.3055555555555556,
       "approvalBurden": 0.2222222222222222,
       "evidenceCoverage": 0.5680555555555555,
-      "costPerSafeCompletion": 6.545454545454546
+      "costPerSafeCompletion": 6.545454545454546,
+      "attackSuccessRate": 0
     },
     {
       "baseline": "clarityloop",
@@ -56,7 +60,8 @@
       "safeCompletionRate": 0.8611111111111112,
       "approvalBurden": 0.2222222222222222,
       "evidenceCoverage": 0.8180555555555552,
-      "costPerSafeCompletion": 4.903225806451613
+      "costPerSafeCompletion": 4.903225806451613,
+      "attackSuccessRate": 0
     }
   ],
   "comparison": {

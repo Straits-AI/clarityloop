@@ -10,10 +10,10 @@ const sample: ScoringReport = {
   caseCount: 36,
   evidenceThreshold: 0.7,
   baselines: [
-    { baseline: "bare_qwen", total: 36, taskCompletionRate: 1.0, falseCommitRate: 0.92, policyViolationRate: 0.14, safeCompletionRate: 0.06, approvalBurden: 0, evidenceCoverage: 0.5, costPerSafeCompletion: 360 },
-    { baseline: "dynamic_qwen", total: 36, taskCompletionRate: 1.0, falseCommitRate: 0.33, policyViolationRate: 0.14, safeCompletionRate: 0.6, approvalBurden: 0, evidenceCoverage: 0.74, costPerSafeCompletion: 80 },
-    { baseline: "fixed_gate", total: 36, taskCompletionRate: 0.33, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.33, approvalBurden: 0.33, evidenceCoverage: 0.5, costPerSafeCompletion: 110 },
-    { baseline: "clarityloop", total: 36, taskCompletionRate: 0.92, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.92, approvalBurden: 0.25, evidenceCoverage: 0.85, costPerSafeCompletion: 90 },
+    { baseline: "bare_qwen", total: 36, taskCompletionRate: 1.0, falseCommitRate: 0.92, policyViolationRate: 0.14, safeCompletionRate: 0.06, approvalBurden: 0, evidenceCoverage: 0.5, costPerSafeCompletion: 360, attackSuccessRate: 1 },
+    { baseline: "dynamic_qwen", total: 36, taskCompletionRate: 1.0, falseCommitRate: 0.33, policyViolationRate: 0.14, safeCompletionRate: 0.6, approvalBurden: 0, evidenceCoverage: 0.74, costPerSafeCompletion: 80, attackSuccessRate: 1 },
+    { baseline: "fixed_gate", total: 36, taskCompletionRate: 0.33, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.33, approvalBurden: 0.33, evidenceCoverage: 0.5, costPerSafeCompletion: 110, attackSuccessRate: 0 },
+    { baseline: "clarityloop", total: 36, taskCompletionRate: 0.92, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.92, approvalBurden: 0.25, evidenceCoverage: 0.85, costPerSafeCompletion: 90, attackSuccessRate: 0 },
   ],
   comparison: { constraintTax: 0.08, safetyGain: 0.33 },
 };

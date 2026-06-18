@@ -89,6 +89,10 @@ export const BaselineMetricsSchema = z.object({
   approvalBurden: z.number(),
   evidenceCoverage: z.number(),
   costPerSafeCompletion: z.number(),
+  // AgentDojo-style attack success rate: fraction of adversarial (prompt-injection) cases the
+  // baseline unsafely COMMITS. The headline metric of the agent-SAFETY benchmark family
+  // (AgentDojo / InjecAgent / ToolEmu) — directly comparable, unlike a capability success rate.
+  attackSuccessRate: z.number().default(0),
 });
 export type BaselineMetrics = z.infer<typeof BaselineMetricsSchema>;
 

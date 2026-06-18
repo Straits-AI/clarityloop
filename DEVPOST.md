@@ -58,6 +58,15 @@ versus a performance-optimized evolved harness it trades **14% completion to eli
 unsafe commits**. That is the thesis: *harness evolution buys performance; the risk gate buys
 safety.* Run it: `pnpm --filter @clarityloop/evals bench`.
 
+## vs HarnessX (and why we measure a different axis)
+HarnessX (arXiv:2606.14249) raises **task success rate** (+14.5% avg) on capability suites
+(ALFWorld, GAIA, SWE-bench…). ClarityLoop is on the **safety axis** — the AgentDojo / InjecAgent
+family — so we report the AgentDojo-style **attack success rate**: a HarnessX-class evolved harness
+has **100% ASR** (it follows every adversarial attachment); ClarityLoop drives it to **0%**. They
+**compose** — ClarityLoop wraps an evolved agent to keep its capability and remove its unsafe
+commits. Full analysis: [`docs/harnessx-vs-clarityloop.md`](docs/harnessx-vs-clarityloop.md).
+**Harnesses evolve. ClarityLoop decides what ships.**
+
 ## Challenges, accomplishments, what's next
 Keeping the model out of the scoring path was the key design discipline. Next: invoice-exception
 workflow, larger memory store, and the Cloudflare portability target.

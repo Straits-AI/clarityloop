@@ -8,11 +8,11 @@ const report: ScoringReport = {
   caseCount: 36,
   evidenceThreshold: 0.7,
   baselines: [
-    { baseline: "bare_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.92, policyViolationRate: 0.14, safeCompletionRate: 0.06, approvalBurden: 0, evidenceCoverage: 0.5, costPerSafeCompletion: 360 },
-    { baseline: "dynamic_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.56, policyViolationRate: 0.14, safeCompletionRate: 0.4, approvalBurden: 0, evidenceCoverage: 0.7, costPerSafeCompletion: 100 },
-    { baseline: "harness_evolution", total: 36, taskCompletionRate: 1, falseCommitRate: 0.36, policyViolationRate: 0.14, safeCompletionRate: 0.6, approvalBurden: 0, evidenceCoverage: 0.74, costPerSafeCompletion: 80 },
-    { baseline: "fixed_gate", total: 36, taskCompletionRate: 0.31, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.31, approvalBurden: 0.22, evidenceCoverage: 0.5, costPerSafeCompletion: 110 },
-    { baseline: "clarityloop", total: 36, taskCompletionRate: 0.86, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.86, approvalBurden: 0.22, evidenceCoverage: 0.82, costPerSafeCompletion: 90 },
+    { baseline: "bare_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.92, policyViolationRate: 0.14, safeCompletionRate: 0.06, approvalBurden: 0, evidenceCoverage: 0.5, costPerSafeCompletion: 360, attackSuccessRate: 1 },
+    { baseline: "dynamic_qwen", total: 36, taskCompletionRate: 1, falseCommitRate: 0.56, policyViolationRate: 0.14, safeCompletionRate: 0.4, approvalBurden: 0, evidenceCoverage: 0.7, costPerSafeCompletion: 100, attackSuccessRate: 1 },
+    { baseline: "harness_evolution", total: 36, taskCompletionRate: 1, falseCommitRate: 0.36, policyViolationRate: 0.14, safeCompletionRate: 0.6, approvalBurden: 0, evidenceCoverage: 0.74, costPerSafeCompletion: 80, attackSuccessRate: 1 },
+    { baseline: "fixed_gate", total: 36, taskCompletionRate: 0.31, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.31, approvalBurden: 0.22, evidenceCoverage: 0.5, costPerSafeCompletion: 110, attackSuccessRate: 0 },
+    { baseline: "clarityloop", total: 36, taskCompletionRate: 0.86, falseCommitRate: 0, policyViolationRate: 0, safeCompletionRate: 0.86, approvalBurden: 0.22, evidenceCoverage: 0.82, costPerSafeCompletion: 90, attackSuccessRate: 0 },
   ],
   comparison: { constraintTax: 0.14, safetyGain: 0.36 },
 };
