@@ -9,6 +9,10 @@ export default defineConfig({
       "@clarityloop/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url)),
       "@clarityloop/evals": fileURLToPath(new URL("../../packages/evals/src/index.ts", import.meta.url)),
       "@clarityloop/qwen": fileURLToPath(new URL("../../packages/qwen/src/index.ts", import.meta.url)),
+      // Dev: the evals report writer pulls these Node built-ins; stub them so the browser
+      // module graph loads (they are never called client-side). Prod build externalizes node:*.
+      "node:fs/promises": fileURLToPath(new URL("./src/dev-node-stub.ts", import.meta.url)),
+      "node:path": fileURLToPath(new URL("./src/dev-node-stub.ts", import.meta.url)),
     },
   },
   server: {

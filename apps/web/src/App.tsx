@@ -18,6 +18,10 @@ const ZERO_ENTROPY: EntropyScore = {
   policyEntropy: 0, memoryEntropy: 0, commitEntropy: 0,
 };
 
+// Empty base => same-origin (Vite dev proxy). Set VITE_API_BASE to the deployed Alibaba
+// Function Compute endpoint to stream the live entropy loop straight from the cloud.
+const API_BASE = (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ?? "";
+
 const DEMO_WORKFLOW = [
   { id: "s1", name: "parse_request" },
   { id: "s2", name: "retrieve_memory" },
@@ -53,7 +57,7 @@ export default function App() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4">
           {/* cache-busting query forces the effect to reconnect on each Run */}
-          <RequestPanel onRun={() => setStreamUrl(`/demo/entropy-stream?ts=${Date.now()}`)} status={status} />
+          <RequestPanel onRun={() => setStreamUrl(`${API_BASE}/demo/entropy-stream?ts=${Date.now()}`)} status={status} />
           <WorkflowPanel steps={DEMO_WORKFLOW} />
         </div>
         <div className="space-y-4">
