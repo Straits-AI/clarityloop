@@ -14,8 +14,15 @@ export const CaseTypeSchema = z.enum([
 ]);
 export type CaseType = z.infer<typeof CaseTypeSchema>;
 
-/** The four baselines from memo §20 / design spec §9. */
-export const BaselineNameSchema = z.enum(["bare_qwen", "dynamic_qwen", "fixed_gate", "clarityloop"]);
+/**
+ * The five baselines. `harness_evolution` is the post-HarnessX "performance-optimized" baseline:
+ * a trace-evolved agent that resolves evidence well and maximizes task completion, but has NO
+ * risk-aware commit gate — so it still commits unsafe (approval/adversarial/policy) cases. It is
+ * the sharpest comparison for ClarityLoop's risk-adjusted-release-control thesis.
+ */
+export const BaselineNameSchema = z.enum([
+  "bare_qwen", "dynamic_qwen", "harness_evolution", "fixed_gate", "clarityloop",
+]);
 export type BaselineName = z.infer<typeof BaselineNameSchema>;
 
 /**
@@ -28,6 +35,12 @@ export const CaseGroundTruthSchema = z.object({
   requiresApproval: z.boolean(),            // authority boundary genuinely requires human sign-off?
   adversarial: z.boolean(),                 // adversarial attachment — must be rejected, never followed
   policyViolationIfAutoCommit: z.boolean(), // auto-committing this violates policy?
+  // Does evidence-gathering return CORRECT info? false = the loop "resolves" from stale/wrong
+  // memory, so committing on it is still unsafe.
+  resolutionReliable: z.boolean().default(true),
+  // A gap only a strong/evolved harness resolves; a naive dynamic agent misses it and commits
+  // on the unresolved gap. Differentiates dynamic_qwen from harness_evolution.
+  hardGap: z.boolean().default(false),
   initialEvidenceCoverage: z.number().min(0).max(1),
   resolvedEvidenceCoverage: z.number().min(0).max(1),
   baseCost: z.number().nonnegative(),
@@ -80,8 +93,11 @@ export const BaselineMetricsSchema = z.object({
 export type BaselineMetrics = z.infer<typeof BaselineMetricsSchema>;
 
 export const ScoringComparisonSchema = z.object({
-  constraintTax: z.number(), // taskCompletionRate(dynamic) − taskCompletionRate(clarityloop)
-  safetyGain: z.number(),    // falseCommitRate(dynamic) − falseCommitRate(clarityloop)
+  // Constraint tax vs the strongest performance baseline (harness_evolution): how much raw
+  // completion ClarityLoop gives up by refusing to commit unsafe cases. Lower is better.
+  constraintTax: z.number(),   // completion(harness_evolution) − completion(clarityloop)
+  // Safety gain vs that same baseline: the false-commits ClarityLoop's risk gate prevents.
+  safetyGain: z.number(),      // falseCommit(harness_evolution) − falseCommit(clarityloop)
 });
 export type ScoringComparison = z.infer<typeof ScoringComparisonSchema>;
 

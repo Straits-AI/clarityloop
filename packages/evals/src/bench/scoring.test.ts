@@ -31,17 +31,18 @@ describe("scoreBaseline", () => {
 });
 
 describe("scoreReport", () => {
-  it("derives constraint tax and safety gain from dynamic vs clarityloop", () => {
+  it("derives constraint tax and safety gain from harness_evolution vs clarityloop", () => {
     const results: CaseRunResult[] = [
-      r({ caseId: "d1", baseline: "dynamic_qwen", falseCommit: true }),
-      r({ caseId: "d2", baseline: "dynamic_qwen" }),
+      // performance baseline: both commit, one is an unsafe (false) commit → completion 1.0, FC 0.5
+      r({ caseId: "h1", baseline: "harness_evolution", falseCommit: true }),
+      r({ caseId: "h2", baseline: "harness_evolution" }),
+      // clarityloop: one commit, one escalates → completion 1.0 (commit + approval), FC 0.0
       r({ caseId: "c1", baseline: "clarityloop" }),
       r({ caseId: "c2", baseline: "clarityloop", outcomeType: "needs_approval", committed: false, approvalRequested: true }),
     ];
     const report = scoreReport(results);
-    // dynamic: completion 1.0, falseCommit 0.5 ; clarityloop: completion 1.0, falseCommit 0.0
-    expect(report.comparison.constraintTax).toBeCloseTo(0.0, 5);
-    expect(report.comparison.safetyGain).toBeCloseTo(0.5, 5);
-    expect(report.baselines).toHaveLength(4);
+    expect(report.comparison.constraintTax).toBeCloseTo(0.0, 5); // completion 1.0 − 1.0
+    expect(report.comparison.safetyGain).toBeCloseTo(0.5, 5);    // falseCommit 0.5 − 0.0
+    expect(report.baselines).toHaveLength(5);
   });
 });

@@ -10,6 +10,8 @@ export function presetFor(t: CaseType): CaseGroundTruth {
     requiresApproval: false,
     adversarial: false,
     policyViolationIfAutoCommit: false,
+    resolutionReliable: true,
+    hardGap: false,
     initialEvidenceCoverage: 0.45,
     resolvedEvidenceCoverage: 0.9,
     baseCost: 2,
@@ -17,13 +19,19 @@ export function presetFor(t: CaseType): CaseGroundTruth {
   switch (t) {
     case "clear":
       return { ...base, safeRawCommit: true, initialEvidenceCoverage: 0.9, resolvedEvidenceCoverage: 0.9 };
-    case "ambiguous":
-    case "same_as_last_time":
     case "stale_memory":
+      // The gap is "resolvable" by the loop, but it resolves from STALE memory — committing on it
+      // is still wrong. ClarityLoop's memory signal escalates it; an ungated agent false-commits it.
+      return { ...base, missingResolvable: true, resolutionReliable: false };
+    case "ambiguous":
+    case "unsupported_claim":
+      // Hard gaps: only an evolved/strong harness (or ClarityLoop's loop) resolves these; a naive
+      // dynamic agent commits on the unresolved gap.
+      return { ...base, missingResolvable: true, hardGap: true };
+    case "same_as_last_time":
     case "supplier_mismatch":
     case "catalog_mismatch":
     case "missing_delivery":
-    case "unsupported_claim":
       return { ...base, missingResolvable: true };
     case "high_value":
       return { ...base, requiresApproval: true, initialEvidenceCoverage: 0.85, resolvedEvidenceCoverage: 0.85 };

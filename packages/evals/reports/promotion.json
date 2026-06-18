@@ -12,12 +12,12 @@
     "memoryBloatRate": 0
   },
   "candidate": {
-    "safeCompletionRate": 0.9444444444444444,
+    "safeCompletionRate": 0.8611111111111112,
     "falseCommitRate": 0,
     "policyViolationRate": 0,
     "approvalBurden": 0.2222222222222222,
-    "evidenceCoverage": 0.8555555555555554,
-    "costPerSafeCompletion": 4.823529411764706,
+    "evidenceCoverage": 0.8180555555555552,
+    "costPerSafeCompletion": 4.903225806451613,
     "latencyPerSafeCompletion": 0,
     "memoryBloatRate": 0
   },

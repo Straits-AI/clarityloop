@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-17T04:09:53.828Z",
+  "generatedAt": "2026-06-18T05:43:42.168Z",
   "caseCount": 36,
   "evidenceThreshold": 0.7,
   "baselines": [
@@ -18,12 +18,23 @@
       "baseline": "dynamic_qwen",
       "total": 36,
       "taskCompletionRate": 1,
-      "falseCommitRate": 0.2777777777777778,
+      "falseCommitRate": 0.5555555555555556,
       "policyViolationRate": 0.19444444444444445,
-      "safeCompletionRate": 0.7222222222222222,
+      "safeCompletionRate": 0.4444444444444444,
       "approvalBurden": 0,
-      "evidenceCoverage": 0.8555555555555554,
-      "costPerSafeCompletion": 5.538461538461538
+      "evidenceCoverage": 0.7305555555555554,
+      "costPerSafeCompletion": 9
+    },
+    {
+      "baseline": "harness_evolution",
+      "total": 36,
+      "taskCompletionRate": 1,
+      "falseCommitRate": 0.3611111111111111,
+      "policyViolationRate": 0.19444444444444445,
+      "safeCompletionRate": 0.6388888888888888,
+      "approvalBurden": 0,
+      "evidenceCoverage": 0.8180555555555552,
+      "costPerSafeCompletion": 6.260869565217392
     },
     {
       "baseline": "fixed_gate",
@@ -32,24 +43,24 @@
       "falseCommitRate": 0,
       "policyViolationRate": 0,
       "safeCompletionRate": 0.3055555555555556,
-      "approvalBurden": 0.3055555555555556,
+      "approvalBurden": 0.2222222222222222,
       "evidenceCoverage": 0.5680555555555555,
       "costPerSafeCompletion": 6.545454545454546
     },
     {
       "baseline": "clarityloop",
       "total": 36,
-      "taskCompletionRate": 0.9444444444444444,
+      "taskCompletionRate": 0.8611111111111112,
       "falseCommitRate": 0,
       "policyViolationRate": 0,
-      "safeCompletionRate": 0.9444444444444444,
+      "safeCompletionRate": 0.8611111111111112,
       "approvalBurden": 0.2222222222222222,
-      "evidenceCoverage": 0.8555555555555554,
-      "costPerSafeCompletion": 4.823529411764706
+      "evidenceCoverage": 0.8180555555555552,
+      "costPerSafeCompletion": 4.903225806451613
     }
   ],
   "comparison": {
-    "constraintTax": 0.05555555555555558,
-    "safetyGain": 0.2777777777777778
+    "constraintTax": 0.13888888888888884,
+    "safetyGain": 0.3611111111111111
   }
 }
