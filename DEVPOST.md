@@ -1,8 +1,8 @@
-# ClarityLoop — Uncertainty-Aware Release Control for Agent-Authored Workflows
+# ClarityLoop — Authority-Boundary Release Control for Agent-Authored Workflows
 
 > **Harnesses evolve. ClarityLoop decides what ships.**
-> Let agents explore freely. Loop for missing signal. Commit only when uncertainty is low enough
-> for the business risk.
+> Let agents explore freely. Loop for missing signal. Commit only what is authorized, within risk
+> limits, and backed by independently verified evidence.
 
 ## Inspiration
 Agents — and harness-evolution systems like **HarnessX** (arXiv:2606.14249) — are getting good at
@@ -15,10 +15,20 @@ applying an unauthorized discount, or following an adversarial attachment. Clari
 autonomy boundary.
 
 ## What it does
-ClarityLoop maintains a compact latent workflow state, scores operational uncertainty
-deterministically, chooses the next best evidence-gathering action, and only commits or promotes
-work when uncertainty, risk, and evidence thresholds are satisfied. The hero visual is the live
-commit-entropy reduction `0.82 → 0.46 → 0.18`.
+ClarityLoop maintains a compact latent workflow state and decides — deterministically — whether
+agent-authored work is ready to commit. The model only *proposes*; the gate *decides*, checking
+each action against an **authority boundary** and a **risk class**, **re-deriving every safety
+signal with independent verifiers** (never trusting the agent's self-report), and running an
+**evidence loop** that gathers the next best signal to resolve recoverable gaps before it commits.
+A calibrated operational-uncertainty score is the final residual check for diffuse doubt — and the
+live commit-entropy reduction `0.82 → 0.46 → 0.18` makes the resolving state legible as the hero
+visual.
+
+We didn't just assert this works — we tried to break it. A full research investigation (ablations,
+held-out calibration, a 36k-trial emission-attack study, two rounds of adversarial peer review)
+established *which* mechanism actually buys the safety: the authority-boundary gate and the evidence
+loop, not the uncertainty signal — and that the guarantee holds precisely because safety signals are
+re-derived independently of the agent. The honest write-up: [`docs/research-findings.md`](docs/research-findings.md).
 
 ## How we built it
 A pnpm + Turborepo TypeScript monorepo: `packages/core` (deterministic entropy scorer, commit gate,

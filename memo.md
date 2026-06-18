@@ -1,10 +1,23 @@
 # ClarityLoop Memo
 
-## Uncertainty-Guided Autopilot for Governed Business Workflows
+## Authority-Boundary Release Control for Governed Business Workflows
+### (originally framed as "Uncertainty-Guided Autopilot")
 
 ### Qwen Cloud Global AI Hackathon Strategy Memo
 
 ### Updated: 16 June 2026
+
+---
+
+> **⚠️ Positioning update (18 June 2026).** This memo records the *original* "uncertainty-guided"
+> framing. A subsequent research investigation (ablations, held-out calibration, a 36k-trial
+> emission-attack study, two rounds of adversarial peer review) found that ClarityLoop's measured
+> safety comes from the **deterministic authority-boundary commit gate + evidence loop**, with safety
+> signals **re-derived independently of the agent** — *not* from the uncertainty/entropy signal, which
+> is decorative on realistic load and only a calibrated residual for diffuse doubt. The product is
+> unchanged; the *positioning* is now "authority-boundary release control." Read the "uncertainty-guided"
+> language below as historical. Honest findings: [`docs/research-findings.md`](docs/research-findings.md);
+> full paper: [`research/paper/paper.md`](research/paper/paper.md).
 
 ---
 

@@ -1,17 +1,25 @@
 # ClarityLoop
 
-**Uncertainty-aware release control for agent-authored business workflows.**
+**Authority-boundary release control for agent-authored business workflows.**
 
 Agents — and harness-evolution systems like HarnessX — are getting good at *generating and
-improving* workflows. ClarityLoop is the layer that decides **when an evolved workflow is clear
-enough, safe enough, and authorized enough to commit, escalate, or promote** into a governed
-business procedure. It maintains a compact latent workflow state, estimates operational
-uncertainty **deterministically**, gathers the next best evidence, and only commits or promotes
-when uncertainty, risk, and evidence thresholds are satisfied.
+improving* workflows. ClarityLoop is the **deterministic governance layer** that decides **when an
+agent-authored workflow is clear enough, safe enough, and authorized enough to commit, escalate, or
+promote** into a governed business procedure. The model only ever *proposes*; deterministic code
+*decides* — checking every action against an **authority boundary** and a **risk class**,
+**re-deriving its safety signals with independent verifiers** rather than trusting the agent's
+self-report, and running an **evidence loop** that resolves recoverable gaps before it commits. A calibrated
+uncertainty signal is the final residual check for diffuse doubt.
 
 > **Harnesses evolve. ClarityLoop decides what ships.**
-> Let agents explore freely. Loop for missing signal. Commit only when uncertainty is low
-> enough for the business risk.
+> Let agents explore freely. Loop for missing signal. Commit only what is authorized, within risk
+> limits, and backed by independently verified evidence.
+
+This is not a slogan — it is a **measured, adversarially stress-tested** claim. We ran a full
+research investigation against our own design (ablations, held-out calibration, a Monte-Carlo
+emission-attack study, two rounds of adversarial peer review) to find out what *actually* makes
+agent workflows safe to ship. The answer — and where uncertainty does and does not help — is in
+[`docs/research-findings.md`](docs/research-findings.md) and [`research/paper/paper.md`](research/paper/paper.md).
 
 Built for the **Global AI Hackathon Series with Qwen Cloud — Track 4: Autopilot Agent**.
 Category: **Agent Workflow Release Control** (not a harness foundry — see
@@ -58,7 +66,16 @@ The honest, defensible claim: ClarityLoop matches the fixed gate's **0% false-co
 **~triples its completion (86% vs 31%)** by resolving the gaps a fixed gate bounces; and versus a
 performance-optimized *evolved harness*, it gives up just **14% completion to eliminate all 36% of
 unsafe commits**. That trade — *small constraint tax for a large safety gain* — is the whole
-thesis: **harness evolution buys performance; the risk gate buys safety.**
+thesis: **harness evolution buys performance; the authority-boundary gate buys safety.**
+
+Because Fixed Gate and ClarityLoop run the **identical commit predicate**, this is a *controlled*
+result: the 31%→86% completion gain is provably the **evidence loop**, not a looser gate. Our
+research went further and tried to *disprove* the design — and two findings survived:
+**(1)** the authority-boundary gate, not the uncertainty signal, drives the safety win (ablating
+uncertainty changes the headline by **0.00pp**); **(2)** the guarantee holds because safety signals
+are **re-derived independently of the agent** — a Monte-Carlo attack study (36k trials) shows the
+gate stays robust when the agent's *self-report* is corrupted (because it doesn't rely on it), and
+that **redundant defenses survive even a full single-channel breach**. *We market what we measured.*
 
 ---
 
@@ -90,10 +107,15 @@ See [`docs/architecture.md`](docs/architecture.md) for the full system diagram, 
 
 ### Key design decisions
 
-- **Deterministic entropy over structured Qwen output.** Qwen never emits an entropy number.
-  It returns structured latent state (facts, missing fields, claims each tagged with an
-  evidence pointer); deterministic TypeScript in `packages/core` computes every entropy
-  component from that structure. This is the auditable, trustworthy core.
+- **The model proposes; deterministic code decides.** Qwen never emits a score or a commit
+  decision. It returns structured latent state (facts, missing fields, claims each tagged with an
+  evidence pointer); deterministic TypeScript in `packages/core` computes the risk class, the
+  authority-boundary check, the evidence coverage, and the entropy components from that structure,
+  then applies the commit predicate. Crucially, the **safety-relevant signals are re-derived by
+  independent verifiers**, not read from the agent's self-report — which our attack study shows is
+  exactly what makes the gate hold when the agent is compromised. This is the auditable, trustworthy
+  core; the entropy term is a calibrated *residual*, not the driver (see
+  [`docs/research-findings.md`](docs/research-findings.md)).
 - **Portable by interface.** Object storage via the S3 API (OSS ↔ R2), relational state behind
   a repository pattern (Postgres ↔ SQLite/D1), the API on Hono (Node ↔ Workers), and the model
   behind a `ModelProvider` abstraction (Qwen via DashScope). **Submission ships live on Alibaba
