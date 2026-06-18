@@ -83,16 +83,16 @@ writeFileSync(join(DIR, "fig2-threshold-invariance.svg"), lineChart({
   ],
 }));
 
-// ── Fig 3: emission trust boundary ────────────────────────────────────────────
-writeFileSync(join(DIR, "fig3-emission-trust-boundary.svg"), barChart({
-  title: "Fig 3.  Adversarial emission: where the guarantee holds",
-  yLabel: "false-commit (%)",
-  note: "6 unsafe archetypes. Self-report corruption defeats 1/6; only a compromised verifier/extraction layer breaks the gate.",
-  data: [
-    { label: "honest", bars: [{ v: 0, color: C.c }] },
-    { label: "emit-corrupt", bars: [{ v: 17, color: C.a }] },
-    { label: "extract-corrupt", bars: [{ v: 67, color: C.b }] },
-    { label: "both", bars: [{ v: 100, color: C.ink }] },
+// ── Fig 3: emission-robustness curve (the non-circular spine) ─────────────────
+writeFileSync(join(DIR, "fig3-emission-robustness.svg"), lineChart({
+  title: "Fig 3.  Release-control robustness vs emission infidelity",
+  xs: ["0", "0.10", "0.25", "0.50", "0.75", "1.0"],
+  xLabel: "per-signal emission infidelity  p",
+  yMax: 40,
+  note: "18 unsafe cases, 2000 trials/point (n=36k), Wilson 95% CIs tight (<1pt). Graceful linear decay; extract channel steeper.",
+  series: [
+    { name: "extract-channel", color: C.b, vals: [0, 2.4, 6.9, 15.8, 26.0, 38.9] },
+    { name: "emit-channel", color: C.a, vals: [0, 2.2, 5.7, 11.4, 16.7, 22.2] },
   ],
 }));
 
