@@ -13,11 +13,10 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else "video/public/cues.json"
 
 # (cue_key, whisper_search_substr, min_time_floor) — Whisper writes digits + "clarity loop"
 ANCHORS = [
-    ("agent", "agent", 0.0), ("ship", "ship", 3.0), ("capability", "capabilit", 5.0),
-    ("governance", "governance", 6.5), ("clarityloop", "clarity", 7.5),
-    ("uncertainty", "uncertaint", 10.0), ("decides", "decide", 16.0),
-    ("thirty", "36", 22.0), ("zero", "0", 27.0), ("eighty", "86", 29.0),
-    ("attacks", "attack", 31.0), ("replay", "replay", 34.0), ("harnesses", "harness", 37.0),
+    ("agent","agent",0.0), ("walk","walk",3.0), ("hand","hand",13.0),
+    ("running","running",22.0), ("residual","residual",32.0), ("deterministic","deterministic",44.0),
+    ("cleared","clear",50.0), ("procedures","procedure",60.0), ("benchmark","benchmark",74.0),
+    ("attack","attack",86.0), ("live","live",96.0),
 ]
 
 asr = pipeline("automatic-speech-recognition", model="openai/whisper-base", chunk_length_s=30)

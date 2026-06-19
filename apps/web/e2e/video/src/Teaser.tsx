@@ -9,10 +9,12 @@ export type Callout =
   | { kind: "stat"; big: string; sub: string; color: string; shape?: ShapeKind }
   | { kind: "dual"; a: string; aSub: string; b: string; bSub: string };
 type ShapeKind = "brackets" | "underline" | "ring" | "slash" | "none";
+export type Box = { x: number; y: number; w: number; h: number };
 export type Shot = {
   from: number; dur: number; clip: string; clipStartFrame: number;
   scaleFrom: number; scaleTo: number; originX: number; originY: number;
   label?: string; callout?: Callout; dim?: number; blur?: number;
+  highlight?: Box; annotation?: { step: string; text: string };
 };
 export type Teaser = { fps: number; introFrames: number; outroFrames: number; vo: string; shots: Shot[] };
 
@@ -208,6 +210,45 @@ const Flash: React.FC<{ frame: number }> = ({ frame }) => {
   return <AbsoluteFill style={{ background: "#fff", opacity: o, mixBlendMode: "screen", pointerEvents: "none" }} />;
 };
 
+// ── demo annotation: highlight brackets that snap around a UI element ───────────
+const Highlight: React.FC<{ box: Box; frame: number; dur: number; fps: number }> = ({ box, frame, dur, fps }) => {
+  const s = spring({ frame, fps, config: { damping: 15, stiffness: 130 }, durationInFrames: 16 });
+  const out = interpolate(frame, [dur - 10, dur], [1, 0], clamp);
+  const o = s * out, L = 30 * s;
+  const pulse = 0.6 + 0.4 * Math.sin(frame / 7);
+  const C = (st: React.CSSProperties) => <div style={{ position: "absolute", width: L, height: L, borderColor: AMBER, ...st }} />;
+  return (
+    <div style={{ position: "absolute", left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: `${box.h}%`, opacity: o, transform: `scale(${0.96 + 0.04 * s})` }}>
+      <div style={{ position: "absolute", inset: 0, border: `1px solid ${AMBER}`, opacity: 0.35 * pulse, borderRadius: 4, boxShadow: `0 0 24px ${AMBER}33 inset` }} />
+      <C style={{ top: -2, left: -2, borderTop: "3px solid", borderLeft: "3px solid" }} />
+      <C style={{ top: -2, right: -2, borderTop: "3px solid", borderRight: "3px solid" }} />
+      <C style={{ bottom: -2, left: -2, borderBottom: "3px solid", borderLeft: "3px solid" }} />
+      <C style={{ bottom: -2, right: -2, borderBottom: "3px solid", borderRight: "3px solid" }} />
+    </div>
+  );
+};
+// lower-third step annotation: number badge + kinetic words
+const Annotation: React.FC<{ step: string; text: string; frame: number; dur: number; fps: number }> = ({ step, text, frame, dur, fps }) => {
+  const s = spring({ frame, fps, config: { damping: 18, stiffness: 150 }, durationInFrames: 16 });
+  const out = interpolate(frame, [dur - 12, dur], [1, 0], clamp);
+  const y = interpolate(s, [0, 1], [40, 0]);
+  const tokens = text.split(" ");
+  return (
+    <div style={{ position: "absolute", left: 56, right: 56, bottom: 70, opacity: Math.min(s, out), transform: `translateY(${y}px)` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <div style={{ flexShrink: 0, width: 52, height: 52, borderRadius: 6, background: AMBER, color: INK, display: "grid", placeItems: "center", fontFamily: MONO, fontWeight: 700, fontSize: 22, boxShadow: `0 0 22px ${AMBER}66` }}>{step}</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0 11px", alignItems: "baseline" }}>
+          {tokens.map((w, i) => {
+            const d = i * 2;
+            const ws = spring({ frame: frame - d, fps, config: { damping: 16, stiffness: 170 }, durationInFrames: 12 });
+            return <span key={i} style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 40, color: HI, opacity: ws, transform: `translateY(${(1 - ws) * 22}px)`, display: "inline-block", textShadow: "0 4px 24px rgba(0,0,0,0.8)" }}>{w}</span>;
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function ShotView({ shot, total, globalFrom }: { shot: Shot; total: number; globalFrom: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -229,8 +270,10 @@ function ShotView({ shot, total, globalFrom }: { shot: Shot; total: number; glob
       <Vignette />
       <Grain />
       <MotionLayer frame={frame} dur={shot.dur} seed={Math.round(globalFrom / 7) % 17} />
+      {shot.highlight && <Highlight box={shot.highlight} frame={frame} dur={shot.dur} fps={fps} />}
       {shot.label && <Kicker text={shot.label} frame={frame} dur={shot.dur} />}
       {shot.callout && <CalloutView c={shot.callout} frame={frame} dur={shot.dur} fps={fps} />}
+      {shot.annotation && <Annotation step={shot.annotation.step} text={shot.annotation.text} frame={frame} dur={shot.dur} fps={fps} />}
       {/* amber wipe transition at the cut */}
       <AbsoluteFill style={{ background: AMBER, clipPath: `inset(0 ${100 - wipe}% 0 0)`, opacity: wipe < 100 ? 1 : 0, mixBlendMode: "screen" }} />
       <Flash frame={frame} />

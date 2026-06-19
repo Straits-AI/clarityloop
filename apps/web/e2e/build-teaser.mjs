@@ -11,23 +11,24 @@ mkdirSync(join(PUB, "audio"), { recursive: true });
 const cues = JSON.parse(readFileSync(join(PUB, "cues.json"), "utf8"));
 const VO_DUR = cues._duration;
 
-// shot plan: anchor span [a,b] -> clip + Ken-Burns framing + optional callout
+// DEMO journey, one beat per VO section (s01..s11): bright footage + a highlight bracket
+// on the UI element being used + a step annotation; proof beats use big stat reveals.
 const BEATS = [
-  { clip: "usage", css: 1.8, a: "agent", b: "ship", sf: 1.06, st: 1.16, ox: 50, oy: 26, dim: 0.4, label: "AGENT-AUTHORED WORKFLOWS" },
-  { clip: "usage", css: 1.8, a: "ship", b: "capability", lead: 1.7, sf: 1.18, st: 1.3, ox: 50, oy: 26, dim: 0.74, blur: 7, callout: { kind: "phrase", text: "Should it *ship*?", color: HI, shape: "underline" } },
-  { clip: "usage", css: 1.8, a: "capability", b: "governance", sf: 1.1, st: 1.18, ox: 50, oy: 30, dim: 0.74, blur: 7, callout: { kind: "phrase", text: "Capability is *solved*.", color: HI } },
-  { clip: "usage", css: 1.8, a: "governance", b: "clarityloop", sf: 1.12, st: 1.22, ox: 50, oy: 30, dim: 0.74, blur: 7, callout: { kind: "phrase", text: "*Governance*", sub: "is the frontier", color: HI, shape: "brackets" } },
-  { clip: "c2_loop", css: 12, a: "clarityloop", b: "uncertainty", sf: 1.02, st: 1.1, ox: 50, oy: 34, dim: 0.32, label: "RELEASE CONTROL" },
-  { clip: "c2_loop", css: 12, a: "uncertainty", b: "decides", sf: 1.46, st: 1.66, ox: 50, oy: 33, dim: 0.24, label: "UNCERTAINTY  →  RESOLVED" },
-  { clip: "c2_loop", css: 12, a: "decides", b: "thirty", sf: 1.66, st: 1.86, ox: 46, oy: 57, dim: 0.6, callout: { kind: "phrase", text: "Commit. Or *escalate*.", color: GO } },
-  { clip: "c4_bench", css: 7, a: "thirty", b: "zero", sf: 1.08, st: 1.18, ox: 40, oy: 30, dim: 0.52, callout: { kind: "stat", big: "36%", sub: "unsafe · capability-only", color: STOP, shape: "brackets" } },
-  { clip: "c4_bench", css: 7, a: "zero", b: "attacks", sf: 1.12, st: 1.22, ox: 60, oy: 30, dim: 0.52, callout: { kind: "stat", big: "0%", sub: "false-commit · 86% done", color: GO, shape: "ring" } },
-  { clip: "c5_compose", css: 9, a: "attacks", b: "replay", sf: 1.08, st: 1.18, ox: 50, oy: 55, dim: 0.52, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
-  { clip: "c3_promotion", css: 5, a: "replay", b: "harnesses", sf: 1.05, st: 1.13, ox: 50, oy: 42, dim: 0.66, blur: 3, callout: { kind: "phrase", text: "Promote only if *safer*.", color: HI } },
+  { clip: "c2_loop", css: 12, a: "agent", b: "walk", sf: 1.0, st: 1.05, ox: 50, oy: 34, dim: 0.52, blur: 2, callout: { kind: "phrase", text: "Is it safe to *ship*?", color: HI, shape: "underline" } },
+  { clip: "c2_loop", css: 5, a: "walk", b: "hand", sf: 1.0, st: 1.03, ox: 28, oy: 24, dim: 0.22, highlight: { x: 17, y: 13, w: 23, h: 23 }, annotation: { step: "01", text: "The messy request" } },
+  { clip: "c2_loop", css: 5, a: "hand", b: "running", sf: 1.0, st: 1.03, ox: 28, oy: 50, dim: 0.22, highlight: { x: 17, y: 37, w: 23, h: 27 }, annotation: { step: "02", text: "A governed workflow" } },
+  { clip: "c2_loop", css: 9, a: "running", b: "residual", sf: 1.0, st: 1.04, ox: 50, oy: 30, dim: 0.2, highlight: { x: 39, y: 13, w: 23, h: 35 }, annotation: { step: "03", text: "Gather the evidence" } },
+  { clip: "c2_loop", css: 10, a: "residual", b: "deterministic", sf: 1.0, st: 1.05, ox: 50, oy: 43, dim: 0.16, highlight: { x: 40, y: 37, w: 21, h: 11 }, annotation: { step: "04", text: "Uncertainty drops" } },
+  { clip: "c2_loop", css: 13, a: "deterministic", b: "cleared", sf: 1.0, st: 1.04, ox: 50, oy: 56, dim: 0.2, highlight: { x: 39, y: 49, w: 23, h: 15 }, annotation: { step: "05", text: "The gate decides" } },
+  { clip: "c2_loop", css: 13, a: "cleared", b: "procedures", sf: 1.0, st: 1.04, ox: 50, oy: 56, dim: 0.2, highlight: { x: 39, y: 49, w: 23, h: 15 }, annotation: { step: "06", text: "Commit — or escalate" } },
+  { clip: "c3_promotion", css: 5, a: "procedures", b: "benchmark", sf: 1.0, st: 1.04, ox: 60, oy: 30, dim: 0.22, highlight: { x: 50, y: 14, w: 32, h: 30 }, annotation: { step: "07", text: "Promote only if safer" } },
+  { clip: "c4_bench", css: 7, a: "benchmark", b: "attack", sf: 1.04, st: 1.12, ox: 50, oy: 30, dim: 0.5, callout: { kind: "dual", a: "36%", aSub: "capability-only", b: "0%", bSub: "clarityloop" } },
+  { clip: "c5_compose", css: 9, a: "attack", b: "live", sf: 1.06, st: 1.14, ox: 50, oy: 55, dim: 0.5, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
+  { clip: "usage", css: 1.8, a: "live", b: "_duration", sf: 1.0, st: 1.06, ox: 68, oy: 3, dim: 0.32, highlight: { x: 57, y: 2, w: 28, h: 5 }, annotation: { step: "●", text: "Live on Alibaba Cloud · Qwen" } },
 ];
 
 // fill any null cue by linear interpolation between known neighbours
-const order = ["agent", "ship", "capability", "governance", "clarityloop", "uncertainty", "decides", "thirty", "zero", "eighty", "attacks", "replay", "harnesses"];
+const order = ["agent", "walk", "hand", "running", "residual", "deterministic", "cleared", "procedures", "benchmark", "attack", "live"];
 const known = order.filter((k) => cues[k] != null);
 if (cues.agent == null) cues.agent = 0.2;
 for (let i = 0; i < order.length; i++) {
@@ -47,18 +48,18 @@ stage("audio_teaser", "teaser.wav");
 const starts = BEATS.map((bt) => Math.max(0, cues[bt.a] - (bt.lead ?? 0.15)));
 const shots = BEATS.map((bt, i) => {
   const start = starts[i];
-  const end = i < BEATS.length - 1 ? starts[i + 1] : cues[bt.b];
+  const end = i < BEATS.length - 1 ? starts[i + 1] : cues._duration;
   const from = INTRO + Math.round(start * FPS);
   const dur = Math.max(22, Math.round((end - start) * FPS));
   return {
     from, dur, clip: `recordings/${bt.clip}.webm`, clipStartFrame: Math.round(bt.css * FPS),
     scaleFrom: bt.sf, scaleTo: bt.st, originX: bt.ox, originY: bt.oy,
-    label: bt.label, callout: bt.callout, dim: bt.dim, blur: bt.blur,
+    label: bt.label, callout: bt.callout, dim: bt.dim, blur: bt.blur, highlight: bt.highlight, annotation: bt.annotation,
   };
 });
 
-const tHar = cues.harnesses ?? VO_DUR - 4;
-const outroFrames = Math.round((VO_DUR - tHar) * FPS) + 24;
+const tHar = VO_DUR;
+const outroFrames = 78;
 const teaser = { fps: FPS, introFrames: INTRO, outroFrames, vo: "audio_teaser/teaser.wav", shots };
 writeFileSync(join(PUB, "teaser.json"), JSON.stringify(teaser, null, 2));
 

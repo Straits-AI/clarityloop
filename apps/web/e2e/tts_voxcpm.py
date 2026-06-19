@@ -17,9 +17,9 @@ import soundfile as sf
 # Pacing + breaths come from this cue AND the script's punctuation (periods, ellipses,
 # rhetorical questions) — NOT from inserted silence.
 VOICE_CONTROL = (
-    "confident product narrator with teaser energy; medium-fast pace; natural pauses "
-    "between thoughts; crisp emphasis on key numbers; clear and modern; not dramatic; "
-    "not reading slides"
+    "warm confident product-demo narrator explaining a tool to a colleague; clear friendly "
+    "explainer tone; medium pace; natural pauses between thoughts; light emphasis on key "
+    "moments; not dramatic; not reading slides"
 )
 
 
