@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { LatentWorkflowStateSchema, type LatentWorkflowState } from "@clarityloop/core";
-import { generateStructured, type ModelProvider } from "@clarityloop/qwen";
+import { generateStructured, extractJson, type ChatMessage, type ModelProvider } from "@clarityloop/qwen";
 
 /** Narrow projection of a WorkflowSpec the loop needs (see plan's decoupling decision). */
 export const LatentExtractionInputSchema = z.object({
@@ -26,21 +26,49 @@ const SYSTEM_PROMPT = [
   "NEVER output any entropy, score, probability, or commit decision — code computes those.",
 ].join("\n");
 
+function extractionMessages(input: LatentExtractionInput): ChatMessage[] {
+  return [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: `Workflow goal: ${input.goal}\n\nBusiness request:\n${input.request}` },
+  ];
+}
+
+function finalizeState(structure: unknown, input: LatentExtractionInput): LatentWorkflowState {
+  // Deterministic override: goal + version come from code, never the model.
+  return LatentWorkflowStateSchema.parse({
+    ...ExtractionSchema.parse(structure),
+    goal: input.goal,
+    workflowVersion: input.workflowVersion,
+  });
+}
+
 export async function extractLatentState(
   provider: ModelProvider,
   input: LatentExtractionInput,
 ): Promise<LatentWorkflowState> {
   const structure = await generateStructured(provider, ExtractionSchema, {
     task: "extraction",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Workflow goal: ${input.goal}\n\nBusiness request:\n${input.request}` },
-    ],
+    messages: extractionMessages(input),
   });
-  // Deterministic override: goal + version come from code, never the model.
-  return LatentWorkflowStateSchema.parse({
-    ...structure,
-    goal: input.goal,
-    workflowVersion: input.workflowVersion,
-  });
+  return finalizeState(structure, input);
+}
+
+/** Streams the raw model tokens of the extraction, then yields the parsed final state.
+ *  Lets the UI show the live LLM output as Qwen writes the structured state. */
+export async function* extractLatentStateStream(
+  provider: ModelProvider,
+  input: LatentExtractionInput,
+): AsyncGenerator<{ type: "token"; token: string } | { type: "state"; state: LatentWorkflowState }> {
+  const messages = extractionMessages(input);
+  let raw = "";
+  if (provider.completeStream) {
+    for await (const tok of provider.completeStream(messages, { task: "extraction" })) {
+      raw += tok;
+      yield { type: "token", token: tok };
+    }
+  } else {
+    raw = await provider.complete(messages, { task: "extraction" });
+    yield { type: "token", token: raw };
+  }
+  yield { type: "state", state: finalizeState(extractJson(raw), input) };
 }

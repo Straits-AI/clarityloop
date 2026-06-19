@@ -9,6 +9,8 @@ export type ChatMessage = { role: "system" | "user" | "assistant"; content: stri
 
 export interface ModelProvider {
   complete(messages: ChatMessage[], opts: { task: QwenTask }): Promise<string>;
+  /** Optional token stream of the same generation, for showing live model output. */
+  completeStream?(messages: ChatMessage[], opts: { task: QwenTask }): AsyncIterable<string>;
 }
 
 /** Model routing per spec §8. Overridable for tests. */

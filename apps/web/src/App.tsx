@@ -7,6 +7,7 @@ import { RequestPanel } from "./components/RequestPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
 import { NextBestAction } from "./components/NextBestAction";
 import { TraceView } from "./components/TraceView";
+import { ModelOutputPanel } from "./components/ModelOutputPanel";
 import { ReplayBenchmarkPanel } from "./components/ReplayBenchmarkPanel";
 import { VersionLineagePanel } from "./components/VersionLineagePanel";
 import { AgentDojoPanel } from "./components/AgentDojoPanel";
@@ -86,13 +87,14 @@ export function BenchmarkPanel() {
   return <ThreeColumnDemo viewModel={vm} />;
 }
 
-const LIVE_REQUEST =
-  "Hi — we need a quote for 120 cartons of the 1L olive oil, same address as our last order, delivered before month end. Our supplier sent the attached price sheet.";
-
 export default function App() {
-  const { run, updates, latest, status, workflow, phaseNote } = useLiveRun(API_BASE);
+  const [request, setRequest] = useState("");
+  const { run, updates, latest, status, workflow, phaseNote, modelOutput } = useLiveRun(API_BASE);
   const history = updates.map((u) => u.entropy.commitEntropy);
-  const onRun = () => run({ request: LIVE_REQUEST, domain: "quote", goal: "draft a customer quote", workflowVersion: "quote-v1" });
+  const onRun = () => {
+    if (!request.trim()) return;
+    run({ request, domain: "quote", goal: "draft a customer quote", workflowVersion: "quote-v1" });
+  };
   const workflowSteps = (workflow?.steps ?? []).map((s) => ({
     id: s.id,
     name: s.action?.type === "tool" ? s.action.toolName : s.name,
@@ -162,7 +164,7 @@ export default function App() {
         />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="space-y-4">
-            <RequestPanel request={LIVE_REQUEST} onRun={onRun} status={status} />
+            <RequestPanel value={request} onChange={setRequest} onRun={onRun} status={status} />
             <WorkflowPanel steps={workflowSteps} status={status} />
           </div>
           <div className="space-y-4">
@@ -171,6 +173,7 @@ export default function App() {
             <NextBestAction action={latest?.nextBestAction ?? null} note={latest?.note ?? null} />
           </div>
           <div className="space-y-4">
+            <ModelOutputPanel output={modelOutput} status={status} />
             <TraceView updates={updates} />
           </div>
         </div>

@@ -18,7 +18,7 @@ import type { ModelProvider } from "@clarityloop/qwen";
 import type { RunRecord, RunRepository, ProcedureVersionRepository, TraceRepository } from "@clarityloop/storage";
 import { InMemoryRunRepository } from "@clarityloop/storage";
 import { designWorkflow } from "./workflow-designer";
-import { LatentExtractionInputSchema, type LatentExtractionInput } from "./latent/extract";
+import { LatentExtractionInputSchema, extractLatentStateStream, type LatentExtractionInput } from "./latent/extract";
 import { runLatentLoop, demoEntropySequence } from "./latent/loop";
 import { registerCommitRoutes } from "./commit-route";
 import { registerApprovalRoutes } from "./approval-route";
@@ -104,6 +104,27 @@ export function createApp(deps: AppDeps) {
     return streamSSE(c, async (stream) => {
       for await (const update of runLatentLoop(deps.provider, input)) {
         await stream.writeSSE({ event: "entropy", id: String(update.step), data: JSON.stringify(update) });
+      }
+    });
+  });
+
+  // Live extraction: stream the RAW model tokens as Qwen writes the structured state,
+  // then emit the parsed state + deterministic entropy. Lets the UI show real LLM output.
+  app.post("/extract/stream", async (c) => {
+    const body = LatentExtractionInputSchema.safeParse(await c.req.json());
+    if (!body.success) return c.json({ error: body.error.flatten() }, 400);
+    const input: LatentExtractionInput = body.data;
+    return streamSSE(c, async (stream) => {
+      for await (const ev of extractLatentStateStream(deps.provider, input)) {
+        if (ev.type === "token") {
+          await stream.writeSSE({ event: "token", data: JSON.stringify({ token: ev.token }) });
+        } else {
+          const entropy = scoreEntropy(ev.state);
+          await stream.writeSSE({
+            event: "entropy", id: "0",
+            data: JSON.stringify({ step: 0, phase: "done", state: ev.state, entropy, nextBestAction: null, note: "latent state extracted and scored" }),
+          });
+        }
       }
     });
   });

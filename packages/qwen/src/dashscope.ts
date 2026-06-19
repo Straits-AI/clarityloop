@@ -23,4 +23,17 @@ export class DashScopeProvider implements ModelProvider {
     });
     return res.choices[0]?.message?.content ?? "";
   }
+
+  async *completeStream(messages: ChatMessage[], opts: { task: QwenTask }): AsyncIterable<string> {
+    const stream = await this.client.chat.completions.create({
+      model: modelForTask(opts.task),
+      messages,
+      temperature: 0.2,
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const tok = chunk.choices?.[0]?.delta?.content;
+      if (tok) yield tok;
+    }
+  }
 }

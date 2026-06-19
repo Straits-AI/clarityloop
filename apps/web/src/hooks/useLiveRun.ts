@@ -9,6 +9,7 @@ export type LiveRun = {
   status: StreamStatus;
   workflow: WorkflowSpec | null;
   phaseNote: string;
+  modelOutput: string;
 };
 
 /**
@@ -21,11 +22,13 @@ export function useLiveRun(apiBase: string): LiveRun {
   const [status, setStatus] = useState<StreamStatus>("idle");
   const [workflow, setWorkflow] = useState<WorkflowSpec | null>(null);
   const [phaseNote, setPhaseNote] = useState("");
+  const [modelOutput, setModelOutput] = useState("");
 
   const run = useCallback<LiveRun["run"]>(
     async ({ request, domain, goal, workflowVersion }) => {
       setUpdates([]);
       setWorkflow(null);
+      setModelOutput("");
       setStatus("streaming");
       try {
         setPhaseNote("Qwen is generating the governed workflow…");
@@ -39,8 +42,8 @@ export function useLiveRun(apiBase: string): LiveRun {
           if (wf.workflowSpec) setWorkflow(wf.workflowSpec as WorkflowSpec);
         }
 
-        setPhaseNote("Qwen is extracting the latent state and scoring it…");
-        const res = await fetch(`${apiBase}/runs/stream`, {
+        setPhaseNote("Qwen is reading the request and writing the latent state…");
+        const res = await fetch(`${apiBase}/extract/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ request, workflowVersion, goal }),
@@ -56,10 +59,17 @@ export function useLiveRun(apiBase: string): LiveRun {
           const frames = buf.split("\n\n");
           buf = frames.pop() ?? "";
           for (const frame of frames) {
-            const dataLine = frame.split("\n").find((l) => l.startsWith("data:"));
+            const lines = frame.split("\n");
+            const ev = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
+            const dataLine = lines.find((l) => l.startsWith("data:"));
             if (!dataLine) continue;
-            const parsed = EntropyUpdateSchema.safeParse(JSON.parse(dataLine.slice(5).trim()));
-            if (parsed.success) setUpdates((prev) => [...prev, parsed.data]);
+            const data = JSON.parse(dataLine.slice(5).trim());
+            if (ev === "token") {
+              setModelOutput((prev) => prev + data.token);
+            } else if (ev === "entropy") {
+              const parsed = EntropyUpdateSchema.safeParse(data);
+              if (parsed.success) setUpdates((prev) => [...prev, parsed.data]);
+            }
           }
         }
         setPhaseNote("Latent state scored — the commit gate decides.");
@@ -73,5 +83,5 @@ export function useLiveRun(apiBase: string): LiveRun {
   );
 
   const latest = updates.length > 0 ? updates[updates.length - 1] : null;
-  return { run, updates, latest, status, workflow, phaseNote };
+  return { run, updates, latest, status, workflow, phaseNote, modelOutput };
 }
