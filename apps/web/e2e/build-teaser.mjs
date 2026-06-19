@@ -13,22 +13,25 @@ const VO_DUR = cues._duration;
 
 // Each step is a distinct CLOSE-UP: punch the camera into the element being used
 // (origin = focal point, scale = zoom). Same UI section, but every beat is a new shot.
+// TWO real cases. Case 1 (live_commit): clean order -> CLEAR TO COMMIT. Case 2 (live_escalate):
+// ambiguous request -> Qwen finds gaps -> NEEDS MORE INFO. All footage is the live dashboard
+// driving real Qwen on the deployed Alibaba FC. Close-ups punch into the element in use.
 const BEATS = [
-  { clip: "c2_loop", css: 12, a: "agent", b: "walk", sf: 1.04, st: 1.1, ox: 50, oy: 34, dim: 0.5, blur: 2, callout: { kind: "phrase", text: "Is it safe to *ship*?", color: HI, shape: "underline" } },
-  { clip: "c2_loop", css: 5, a: "walk", b: "hand", sf: 1.7, st: 1.78, ox: 28, oy: 26, dim: 0.16, annotation: { step: "01", text: "The messy request" } },
-  { clip: "c2_loop", css: 5, a: "hand", b: "running", sf: 1.66, st: 1.74, ox: 28, oy: 50, dim: 0.16, annotation: { step: "02", text: "A governed workflow" } },
-  { clip: "c2_loop", css: 9, a: "running", b: "residual", sf: 1.62, st: 1.7, ox: 50, oy: 27, dim: 0.14, annotation: { step: "03", text: "Gather the evidence" } },
-  { clip: "c2_loop", css: 10, a: "residual", b: "deterministic", sf: 1.95, st: 2.05, ox: 50, oy: 42, dim: 0.12, annotation: { step: "04", text: "Uncertainty drops" } },
-  { clip: "c2_loop", css: 13, a: "deterministic", b: "cleared", sf: 1.85, st: 1.95, ox: 50, oy: 56, dim: 0.14, annotation: { step: "05", text: "The gate decides" } },
-  { clip: "c2_loop", css: 13, a: "cleared", b: "procedures", sf: 1.6, st: 1.68, ox: 50, oy: 56, dim: 0.16, annotation: { step: "06", text: "Commit — or escalate" } },
-  { clip: "c3_promotion", css: 5, a: "procedures", b: "benchmark", sf: 1.5, st: 1.6, ox: 66, oy: 30, dim: 0.16, annotation: { step: "07", text: "Promote only if safer" } },
+  { clip: "live_commit", css: 4, a: "agent", b: "clean", sf: 1.05, st: 1.1, ox: 50, oy: 28, dim: 0.5, blur: 2, callout: { kind: "phrase", text: "Is it safe to *ship*?", color: HI, shape: "underline" } },
+  { clip: "live_commit", css: 4, a: "clean", b: "governed", sf: 1.66, st: 1.74, ox: 28, oy: 25, dim: 0.16, annotation: { step: "01", text: "A complete order" } },
+  { clip: "live_commit", css: 31, a: "governed", b: "clears", sf: 1.58, st: 1.66, ox: 50, oy: 27, dim: 0.14, annotation: { step: "02", text: "Qwen builds the workflow" } },
+  { clip: "live_commit", css: 32, a: "clears", b: "messier", sf: 1.7, st: 1.78, ox: 50, oy: 47, dim: 0.16, annotation: { step: "03", text: "Cleared to commit" } },
+  { clip: "live_escalate", css: 4, a: "messier", b: "gaps", sf: 1.66, st: 1.74, ox: 28, oy: 25, dim: 0.16, annotation: { step: "04", text: "An ambiguous request" } },
+  { clip: "live_escalate", css: 24, a: "gaps", b: "escalates", sf: 1.58, st: 1.66, ox: 50, oy: 27, dim: 0.14, annotation: { step: "05", text: "Qwen finds the gaps" } },
+  { clip: "live_escalate", css: 24, a: "escalates", b: "promotes", sf: 1.5, st: 1.58, ox: 50, oy: 48, dim: 0.16, annotation: { step: "06", text: "Stops · escalates to a human" } },
+  { clip: "c3_promotion", css: 5, a: "promotes", b: "benchmark", sf: 1.5, st: 1.6, ox: 66, oy: 30, dim: 0.16, annotation: { step: "07", text: "Promote only if safer" } },
   { clip: "c4_bench", css: 7, a: "benchmark", b: "attack", sf: 1.05, st: 1.12, ox: 50, oy: 30, dim: 0.52, callout: { kind: "dual", a: "36%", aSub: "capability-only", b: "0%", bSub: "clarityloop" } },
-  { clip: "c5_compose", css: 9, a: "attack", b: "live", sf: 1.06, st: 1.14, ox: 50, oy: 55, dim: 0.52, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
-  { clip: "usage", css: 1.8, a: "live", b: "_duration", sf: 1.55, st: 1.65, ox: 70, oy: 4, dim: 0.28, annotation: { step: "●", text: "Live on Alibaba Cloud · Qwen" } },
+  { clip: "c5_compose", css: 9, a: "attack", b: "function", sf: 1.06, st: 1.14, ox: 50, oy: 55, dim: 0.52, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
+  { clip: "usage", css: 1.8, a: "function", b: "_duration", sf: 1.55, st: 1.65, ox: 70, oy: 4, dim: 0.28, annotation: { step: "●", text: "Live on Alibaba Cloud · Qwen" } },
 ];
 
 // fill any null cue by linear interpolation between known neighbours
-const order = ["agent", "walk", "hand", "running", "residual", "deterministic", "cleared", "procedures", "benchmark", "attack", "live"];
+const order = ["agent", "clean", "governed", "clears", "messier", "gaps", "escalates", "promotes", "benchmark", "attack", "function"];
 const known = order.filter((k) => cues[k] != null);
 if (cues.agent == null) cues.agent = 0.2;
 for (let i = 0; i < order.length; i++) {
