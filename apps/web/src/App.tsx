@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import type { EntropyScore } from "@clarityloop/core";
-import { useEntropyStream, type StreamStatus } from "./hooks/useEntropyStream";
+import type { EntropyScore, EntropyUpdate } from "@clarityloop/core";
+import type { StreamStatus } from "./hooks/useEntropyStream";
+import { useLiveRun } from "./hooks/useLiveRun";
 import { EntropyHeatmap } from "./components/EntropyHeatmap";
 import { RequestPanel } from "./components/RequestPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
@@ -23,15 +24,6 @@ const ZERO_ENTROPY: EntropyScore = {
 // Function Compute endpoint to stream the live entropy loop straight from the cloud.
 const API_BASE = (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ?? "";
 
-const DEMO_WORKFLOW = [
-  { id: "s1", name: "parse_request" },
-  { id: "s2", name: "retrieve_memory" },
-  { id: "s3", name: "lookup_catalog + check_stock" },
-  { id: "s4", name: "compare_quote" },
-  { id: "s5", name: "draft_quote" },
-  { id: "s6", name: "commit_gate" },
-];
-
 const HERO_STATS = [
   { v: "0%", l: "false-commit", sub: "vs 36% capability-only", tone: "go" },
   { v: "86%", l: "task completion", sub: "+55pp over a fixed gate", tone: "amber" },
@@ -51,14 +43,19 @@ function SectionHeader({ index, title, blurb }: { index: string; title: string; 
   );
 }
 
-/** Go / no-go readout derived from the streamed commit-entropy + phase. */
-function GateVerdict({ entropy, status, phase }: { entropy: EntropyScore; status: StreamStatus; phase: string | null }) {
-  const done = phase === "done";
-  const e = entropy.commitEntropy;
-  let label = "STANDBY", cls = "v-hold", note = "Awaiting a request.";
-  if (status === "streaming" && !done) { label = "GATHERING EVIDENCE"; cls = "v-hold"; note = "Loop resolving recoverable gaps before the gate decides."; }
-  else if (done && e < 0.3) { label = "CLEAR TO COMMIT"; cls = "v-go"; note = "Authority boundary clear · risk within ceiling · evidence sufficient."; }
-  else if (done) { label = "ESCALATE"; cls = "v-hold"; note = "Residual uncertainty above threshold — routed to human approval."; }
+/** Real commit-gate decision, computed from the live extracted state (no mock). */
+function GateVerdict({ latest, status, note }: { latest: EntropyUpdate | null; status: StreamStatus; note: string }) {
+  const e = latest?.entropy.commitEntropy ?? 0;
+  const done = latest?.phase === "done";
+  const missingReq = (latest?.state.missingFields ?? []).filter((m) => m.necessity === "required");
+  const highRisk = (latest?.state.riskFlags ?? []).filter((r) => r.severity === "high");
+  let label = "STANDBY", cls = "v-hold", reason = "Awaiting a request.";
+  if (status === "error") { label = "ERROR"; cls = "v-stop"; reason = note; }
+  else if (status === "streaming" && !done) { label = "RUNNING"; cls = "v-hold"; reason = note || "Qwen extracting the latent state…"; }
+  else if (done && missingReq.length > 0) { label = "NEEDS MORE INFO"; cls = "v-hold"; reason = `Missing required: ${missingReq.map((m) => m.name).join("; ")}.`; }
+  else if (done && highRisk.length > 0) { label = "ESCALATE"; cls = "v-hold"; reason = `Unmitigated high-severity risk: ${highRisk.map((r) => r.kind).join(", ")}.`; }
+  else if (done && e < 0.3) { label = "CLEAR TO COMMIT"; cls = "v-go"; reason = "Authority boundary clear · risk within ceiling · evidence sufficient."; }
+  else if (done) { label = "ESCALATE"; cls = "v-hold"; reason = "Residual uncertainty above threshold — routed to human approval."; }
   return (
     <div className="panel p-5">
       <div className="flex items-center justify-between">
@@ -72,7 +69,7 @@ function GateVerdict({ entropy, status, phase }: { entropy: EntropyScore; status
           <div className="eyebrow mt-0.5 !tracking-[0.18em]">residual</div>
         </div>
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-dim">{note}</p>
+      <p className="mt-3 text-xs leading-relaxed text-dim">{reason}</p>
     </div>
   );
 }
@@ -89,11 +86,17 @@ export function BenchmarkPanel() {
   return <ThreeColumnDemo viewModel={vm} />;
 }
 
+const LIVE_REQUEST =
+  "Hi — we need a quote for 120 cartons of the 1L olive oil, same address as our last order, delivered before month end. Our supplier sent the attached price sheet.";
+
 export default function App() {
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-  const { updates, latest, status } = useEntropyStream(streamUrl);
+  const { run, updates, latest, status, workflow, phaseNote } = useLiveRun(API_BASE);
   const history = updates.map((u) => u.entropy.commitEntropy);
-  const phase = latest?.phase ?? null;
+  const onRun = () => run({ request: LIVE_REQUEST, domain: "quote", goal: "draft a customer quote", workflowVersion: "quote-v1" });
+  const workflowSteps = (workflow?.steps ?? []).map((s) => ({
+    id: s.id,
+    name: s.action?.type === "tool" ? s.action.toolName : s.name,
+  }));
 
   return (
     <main className="relative z-10 mx-auto min-h-screen max-w-7xl px-5 py-7 sm:px-8">
@@ -159,13 +162,12 @@ export default function App() {
         />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="space-y-4">
-            {/* cache-busting query forces the effect to reconnect on each Run */}
-            <RequestPanel onRun={() => setStreamUrl(`${API_BASE}/demo/entropy-stream?ts=${Date.now()}`)} status={status} />
-            <WorkflowPanel steps={DEMO_WORKFLOW} />
+            <RequestPanel request={LIVE_REQUEST} onRun={onRun} status={status} />
+            <WorkflowPanel steps={workflowSteps} status={status} />
           </div>
           <div className="space-y-4">
             <EntropyHeatmap entropy={latest?.entropy ?? ZERO_ENTROPY} history={history} />
-            <GateVerdict entropy={latest?.entropy ?? ZERO_ENTROPY} status={status} phase={phase} />
+            <GateVerdict latest={latest} status={status} note={phaseNote} />
             <NextBestAction action={latest?.nextBestAction ?? null} note={latest?.note ?? null} />
           </div>
           <div className="space-y-4">

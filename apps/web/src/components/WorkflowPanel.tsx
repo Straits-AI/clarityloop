@@ -1,25 +1,29 @@
-export function WorkflowPanel({ steps }: { steps: { id: string; name: string }[] }) {
+import type { StreamStatus } from "../hooks/useEntropyStream";
+
+export function WorkflowPanel({ steps, status }: { steps: { id: string; name: string }[]; status: StreamStatus }) {
   return (
     <section className="panel p-5">
       <div className="mb-1 flex items-center justify-between">
         <h2 className="eyebrow text-body">Generated Workflow</h2>
-        <span className="data text-[10px] text-dim">WorkflowSpec</span>
+        <span className="data text-[10px] text-dim">{steps.length ? "WorkflowSpec" : "—"}</span>
       </div>
       <p className="mb-4 text-[11px] text-dim">Qwen-generated · deterministically assembled &amp; governed</p>
-      <ol className="space-y-2">
-        {steps.map((s, i) => {
-          const isGate = s.name === "commit_gate";
-          return (
+      {steps.length === 0 ? (
+        <div className="flex items-center justify-center rounded-[3px] border border-dashed border-line py-8">
+          <p className="data text-center text-[12px] text-dim">
+            {status === "streaming" ? "Qwen is generating the workflow…" : "run to generate the governed workflow"}
+          </p>
+        </div>
+      ) : (
+        <ol className="space-y-2">
+          {steps.map((s, i) => (
             <li key={s.id} className="flex items-center gap-3">
-              <span className={`data grid h-6 w-6 place-items-center rounded-[3px] border text-[11px] ${isGate ? "border-amber/50 bg-amber-soft text-amber" : "border-line text-dim"}`}>
-                {i + 1}
-              </span>
-              <span className={`font-mono text-[13px] ${isGate ? "text-amber" : "text-hi"}`}>{s.name}</span>
-              {isGate && <span className="data ml-auto text-[9.5px] tracking-[0.16em] text-amber/70">DECIDE</span>}
+              <span className="data grid h-6 w-6 place-items-center rounded-[3px] border border-line text-[11px] text-dim">{i + 1}</span>
+              <span className="font-mono text-[13px] text-hi">{s.name}</span>
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }
