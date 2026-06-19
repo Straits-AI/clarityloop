@@ -25,3 +25,5 @@ apps/web/e2e/video/public/
 apps/web/e2e/output/*.mp4
 test-results/
 playwright-report/
+apps/web/e2e/audio_teaser/
+apps/web/e2e/narration_teaser.json

@@ -13,10 +13,13 @@ import argparse, json, os
 import numpy as np
 import soundfile as sf
 
-# Delivery control (parenthetical prefix). "medium-fast pace" fixes the slow cloned cadence.
+# Delivery control (parenthetical voice-design cue VoxCPM2 reads but does not speak).
+# Pacing + breaths come from this cue AND the script's punctuation (periods, ellipses,
+# rhetorical questions) — NOT from inserted silence.
 VOICE_CONTROL = (
-    "calm confident professional narrator; clear technical delivery; medium-fast pace; "
-    "natural pauses; crisp emphasis on key numbers; not dramatic; not reading slides"
+    "confident product narrator with teaser energy; medium-fast pace; natural pauses "
+    "between thoughts; crisp emphasis on key numbers; clear and modern; not dramatic; "
+    "not reading slides"
 )
 
 
