@@ -11,20 +11,20 @@ mkdirSync(join(PUB, "audio"), { recursive: true });
 const cues = JSON.parse(readFileSync(join(PUB, "cues.json"), "utf8"));
 const VO_DUR = cues._duration;
 
-// DEMO journey, one beat per VO section (s01..s11): bright footage + a highlight bracket
-// on the UI element being used + a step annotation; proof beats use big stat reveals.
+// Each step is a distinct CLOSE-UP: punch the camera into the element being used
+// (origin = focal point, scale = zoom). Same UI section, but every beat is a new shot.
 const BEATS = [
-  { clip: "c2_loop", css: 12, a: "agent", b: "walk", sf: 1.0, st: 1.05, ox: 50, oy: 34, dim: 0.52, blur: 2, callout: { kind: "phrase", text: "Is it safe to *ship*?", color: HI, shape: "underline" } },
-  { clip: "c2_loop", css: 5, a: "walk", b: "hand", sf: 1.0, st: 1.03, ox: 28, oy: 24, dim: 0.22, highlight: { x: 17, y: 13, w: 23, h: 23 }, annotation: { step: "01", text: "The messy request" } },
-  { clip: "c2_loop", css: 5, a: "hand", b: "running", sf: 1.0, st: 1.03, ox: 28, oy: 50, dim: 0.22, highlight: { x: 17, y: 37, w: 23, h: 27 }, annotation: { step: "02", text: "A governed workflow" } },
-  { clip: "c2_loop", css: 9, a: "running", b: "residual", sf: 1.0, st: 1.04, ox: 50, oy: 30, dim: 0.2, highlight: { x: 39, y: 13, w: 23, h: 35 }, annotation: { step: "03", text: "Gather the evidence" } },
-  { clip: "c2_loop", css: 10, a: "residual", b: "deterministic", sf: 1.0, st: 1.05, ox: 50, oy: 43, dim: 0.16, highlight: { x: 40, y: 37, w: 21, h: 11 }, annotation: { step: "04", text: "Uncertainty drops" } },
-  { clip: "c2_loop", css: 13, a: "deterministic", b: "cleared", sf: 1.0, st: 1.04, ox: 50, oy: 56, dim: 0.2, highlight: { x: 39, y: 49, w: 23, h: 15 }, annotation: { step: "05", text: "The gate decides" } },
-  { clip: "c2_loop", css: 13, a: "cleared", b: "procedures", sf: 1.0, st: 1.04, ox: 50, oy: 56, dim: 0.2, highlight: { x: 39, y: 49, w: 23, h: 15 }, annotation: { step: "06", text: "Commit — or escalate" } },
-  { clip: "c3_promotion", css: 5, a: "procedures", b: "benchmark", sf: 1.0, st: 1.04, ox: 60, oy: 30, dim: 0.22, highlight: { x: 50, y: 14, w: 32, h: 30 }, annotation: { step: "07", text: "Promote only if safer" } },
-  { clip: "c4_bench", css: 7, a: "benchmark", b: "attack", sf: 1.04, st: 1.12, ox: 50, oy: 30, dim: 0.5, callout: { kind: "dual", a: "36%", aSub: "capability-only", b: "0%", bSub: "clarityloop" } },
-  { clip: "c5_compose", css: 9, a: "attack", b: "live", sf: 1.06, st: 1.14, ox: 50, oy: 55, dim: 0.5, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
-  { clip: "usage", css: 1.8, a: "live", b: "_duration", sf: 1.0, st: 1.06, ox: 68, oy: 3, dim: 0.32, highlight: { x: 57, y: 2, w: 28, h: 5 }, annotation: { step: "●", text: "Live on Alibaba Cloud · Qwen" } },
+  { clip: "c2_loop", css: 12, a: "agent", b: "walk", sf: 1.04, st: 1.1, ox: 50, oy: 34, dim: 0.5, blur: 2, callout: { kind: "phrase", text: "Is it safe to *ship*?", color: HI, shape: "underline" } },
+  { clip: "c2_loop", css: 5, a: "walk", b: "hand", sf: 1.7, st: 1.78, ox: 28, oy: 26, dim: 0.16, annotation: { step: "01", text: "The messy request" } },
+  { clip: "c2_loop", css: 5, a: "hand", b: "running", sf: 1.66, st: 1.74, ox: 28, oy: 50, dim: 0.16, annotation: { step: "02", text: "A governed workflow" } },
+  { clip: "c2_loop", css: 9, a: "running", b: "residual", sf: 1.62, st: 1.7, ox: 50, oy: 27, dim: 0.14, annotation: { step: "03", text: "Gather the evidence" } },
+  { clip: "c2_loop", css: 10, a: "residual", b: "deterministic", sf: 1.95, st: 2.05, ox: 50, oy: 42, dim: 0.12, annotation: { step: "04", text: "Uncertainty drops" } },
+  { clip: "c2_loop", css: 13, a: "deterministic", b: "cleared", sf: 1.85, st: 1.95, ox: 50, oy: 56, dim: 0.14, annotation: { step: "05", text: "The gate decides" } },
+  { clip: "c2_loop", css: 13, a: "cleared", b: "procedures", sf: 1.6, st: 1.68, ox: 50, oy: 56, dim: 0.16, annotation: { step: "06", text: "Commit — or escalate" } },
+  { clip: "c3_promotion", css: 5, a: "procedures", b: "benchmark", sf: 1.5, st: 1.6, ox: 66, oy: 30, dim: 0.16, annotation: { step: "07", text: "Promote only if safer" } },
+  { clip: "c4_bench", css: 7, a: "benchmark", b: "attack", sf: 1.05, st: 1.12, ox: 50, oy: 30, dim: 0.52, callout: { kind: "dual", a: "36%", aSub: "capability-only", b: "0%", bSub: "clarityloop" } },
+  { clip: "c5_compose", css: 9, a: "attack", b: "live", sf: 1.06, st: 1.14, ox: 50, oy: 55, dim: 0.52, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
+  { clip: "usage", css: 1.8, a: "live", b: "_duration", sf: 1.55, st: 1.65, ox: 70, oy: 4, dim: 0.28, annotation: { step: "●", text: "Live on Alibaba Cloud · Qwen" } },
 ];
 
 // fill any null cue by linear interpolation between known neighbours

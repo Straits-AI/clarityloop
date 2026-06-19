@@ -259,10 +259,13 @@ function ShotView({ shot, total, globalFrom }: { shot: Shot; total: number; glob
   const target = shot.dim ?? 0.46;
   const dark = interpolate(frame, [0, 14], [Math.min(0.85, target + 0.3), target], clamp);
   const fblur = shot.blur ?? 0;
+  // center the focal point (originX/Y) and zoom by `drift` -> distinct close-up per element
+  const tx = -(shot.originX / 100 - 0.5) * drift * 100;
+  const ty = -(shot.originY / 100 - 0.5) * drift * 100;
   return (
     <AbsoluteFill style={{ background: INK }}>
       <AbsoluteFill style={{ clipPath: `inset(${reveal / 2}% 0% ${reveal / 2}% 0%)` }}>
-        <AbsoluteFill style={{ transform: `scale(${drift})`, transformOrigin: `${shot.originX}% ${shot.originY}%`, filter: fblur ? `blur(${fblur}px)` : undefined }}>
+        <AbsoluteFill style={{ transform: `translate(${tx}%, ${ty}%) scale(${drift})`, transformOrigin: "50% 50%", filter: fblur ? `blur(${fblur}px)` : undefined }}>
           <OffthreadVideo src={staticFile(shot.clip)} startFrom={shot.clipStartFrame} muted />
         </AbsoluteFill>
         <AbsoluteFill style={{ background: `rgba(6,8,13,${dark})` }} />
