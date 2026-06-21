@@ -11,12 +11,13 @@ from transformers import pipeline
 AUDIO = sys.argv[1] if len(sys.argv) > 1 else "audio_teaser/teaser.wav"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "video/public/cues.json"
 
-# (cue_key, whisper_search_substr, min_time_floor) — Whisper writes digits + "clarity loop"
+# (cue_key, whisper_search_substr, min_time_floor) — threat-first narration anchors
 ANCHORS = [
-    ("agent","agent",0.0), ("clean","clean",3.0), ("governed","governed",11.0),
-    ("clears","clear",18.0), ("messier","messier",25.0), ("gaps","gaps",36.0),
-    ("escalates","escalat",46.0), ("promotes","promot",56.0), ("benchmark","benchmark",57.0),
-    ("attack","attack",66.0), ("function","function",72.0),
+    ("agent","agent",0.0), ("wrong","wrong",4.0), ("shipped","shipped",16.0),
+    ("change","change",26.0), ("escalates","escalat",40.0), ("proposes","propos",50.0),
+    ("image","image",60.0), ("clean","clean",74.0), ("ambiguous","ambig",84.0),
+    ("third","third",90.0), ("swap","swap",104.0), ("function","function",114.0),
+    ("job","job",124.0),
 ]
 
 asr = pipeline("automatic-speech-recognition", model="openai/whisper-base", chunk_length_s=30)
@@ -26,10 +27,15 @@ words = [(c["text"].strip().lower(), c["timestamp"][0]) for c in res["chunks"] i
 import soundfile as sf
 dur = len(sf.read(AUDIO)[0]) / sf.info(AUDIO).samplerate
 
+# Monotonic alignment: anchors occur IN ORDER, so find each one's first occurrence AFTER the
+# previous anchor (not a fixed time floor) — robust to whatever length the VO actually is.
 cues = {"_duration": round(dur, 3)}
-for key, anchor, floor in ANCHORS:
-    t = next((ts for w, ts in words if anchor in w and ts >= floor), None)
+last = -1.0
+for key, anchor, _floor in ANCHORS:
+    t = next((ts for w, ts in words if anchor in w and ts > last + 0.04), None)
     cues[key] = round(t, 3) if t is not None else None
+    if t is not None:
+        last = t
 import os
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 json.dump(cues, open(OUT, "w"), indent=2)

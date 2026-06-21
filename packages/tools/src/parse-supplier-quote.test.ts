@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { InMemoryArtifactStore } from "@clarityloop/storage";
-import type { ModelProvider } from "@clarityloop/qwen";
+import type { ChatMessage, ModelProvider } from "@clarityloop/qwen";
 import { makeParseSupplierQuoteTool, ParseSupplierQuoteArgsSchema } from "./parse-supplier-quote";
 
 const fakeProvider = (reply: string): ModelProvider => ({ async complete() { return reply; } });
+
+/** Captures the messages the tool sends, so we can prove a real image part is transmitted. */
+function capturingProvider(reply: string): { provider: ModelProvider; seen: ChatMessage[][] } {
+  const seen: ChatMessage[][] = [];
+  return { seen, provider: { async complete(messages) { seen.push(messages); return reply; } } };
+}
 
 const VALID = JSON.stringify({
   lineItems: [{ sku: "CTN-COFFEE-1KG", description: "Coffee 1kg", quantity: 120, unitPrice: 41.0 }],
@@ -20,6 +26,22 @@ describe("parse_supplier_quote tool", () => {
     expect(res.ok).toBe(true);
     expect(res.data?.total).toBe(4920);
     expect(res.evidence[0].kind).toBe("supplier_quote");
+  });
+
+  it("sends the image as a real image_url part to qwen-vl-plus when the artifact is an image", async () => {
+    const store = new InMemoryArtifactStore();
+    const dataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+    await store.put("uploads/sheet.png", dataUrl);
+    const { provider, seen } = capturingProvider("```json\n" + VALID + "\n```");
+    const tool = makeParseSupplierQuoteTool({ provider, store });
+    const res = await tool.run(ParseSupplierQuoteArgsSchema.parse({ artifactKey: "uploads/sheet.png" }));
+    expect(res.ok).toBe(true);
+    const userMsg = seen[0].find((m) => m.role === "user");
+    expect(Array.isArray(userMsg?.content)).toBe(true);
+    const parts = userMsg!.content as Array<{ type: string; image_url?: { url: string } }>;
+    const imagePart = parts.find((p) => p.type === "image_url");
+    expect(imagePart).toBeDefined();
+    expect(imagePart!.image_url!.url).toBe(dataUrl); // the actual image bytes reach the vision model
   });
 
   it("returns ok:false when the artifact is missing", async () => {

@@ -5,7 +5,17 @@ export type QwenTask =
   | "document_parse"
   | "audit_narrative";
 
-export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
+/** A multimodal content part — text, or an image (data URL or https) for qwen-vl-* models. */
+export type TextPart = { type: "text"; text: string };
+export type ImagePart = { type: "image_url"; image_url: { url: string } };
+export type MessageContent = string | Array<TextPart | ImagePart>;
+
+export type ChatMessage = { role: "system" | "user" | "assistant"; content: MessageContent };
+
+/** Build a user message that sends an image (base64 data URL or URL) to a vision model. */
+export function imageMessage(text: string, imageUrl: string): ChatMessage {
+  return { role: "user", content: [{ type: "text", text }, { type: "image_url", image_url: { url: imageUrl } }] };
+}
 
 export interface ModelProvider {
   complete(messages: ChatMessage[], opts: { task: QwenTask }): Promise<string>;

@@ -13,13 +13,39 @@ import argparse, json, os
 import numpy as np
 import soundfile as sf
 
+
+def dehum(wav, sr, cutoff=105.0, hum=49.0):
+    """Remove the ~50Hz mains hum the reference recording's environment bleeds into
+    the cloned voice. The hum is strong (~+25dB over the voice band), so a gentle
+    high-pass isn't enough — we use a STEEP high-pass at ~105Hz PLUS a deep notch at
+    the mains fundamental. The cloned voice carries almost no energy below ~160Hz
+    (verified: cutting below 160Hz loses <0.3dB), so this leaves speech untouched.
+    Falls back to a one-pole high-pass if scipy isn't available."""
+    try:
+        from scipy.signal import butter, sosfiltfilt, iirnotch, filtfilt
+        sos = butter(8, cutoff, btype="highpass", fs=sr, output="sos")
+        wav = sosfiltfilt(sos, wav)
+        b, a = iirnotch(hum, Q=hum / 4.0, fs=sr)  # narrow notch right on the mains tone
+        wav = filtfilt(b, a, wav)
+        return wav.astype(np.float32)
+    except Exception:
+        rc = 1.0 / (2 * np.pi * cutoff)
+        a = rc / (rc + 1.0 / sr)
+        out = np.empty_like(wav)
+        prev_x = prev_y = 0.0
+        for n, x in enumerate(wav):
+            prev_y = a * (prev_y + x - prev_x)
+            out[n] = prev_y
+            prev_x = x
+        return out.astype(np.float32)
+
 # Delivery control (parenthetical voice-design cue VoxCPM2 reads but does not speak).
 # Pacing + breaths come from this cue AND the script's punctuation (periods, ellipses,
 # rhetorical questions) — NOT from inserted silence.
 VOICE_CONTROL = (
     "warm confident product-demo narrator explaining a tool to a colleague; clear friendly "
-    "explainer tone; medium pace; natural pauses between thoughts; light emphasis on key "
-    "moments; not dramatic; not reading slides"
+    "explainer tone; unhurried relaxed pace, slower than average; generous natural pauses "
+    "between thoughts; light emphasis on key moments; not dramatic; not reading slides"
 )
 
 
@@ -61,6 +87,7 @@ def main() -> None:
             inference_timesteps=args.steps,
         )
         wav = np.asarray(wav, dtype=np.float32)
+        wav = dehum(wav, sr)  # strip ~50Hz mains rumble cloned from the reference recording
         sf.write(out_path, wav, sr)
         dur = len(wav) / sr
         manifest.append({"id": lid, "file": f"{lid}.wav", "duration": round(dur, 3), "text": text})

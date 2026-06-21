@@ -11,27 +11,31 @@ mkdirSync(join(PUB, "audio"), { recursive: true });
 const cues = JSON.parse(readFileSync(join(PUB, "cues.json"), "utf8"));
 const VO_DUR = cues._duration;
 
-// Each step is a distinct CLOSE-UP: punch the camera into the element being used
-// (origin = focal point, scale = zoom). Same UI section, but every beat is a new shot.
-// TWO real cases. Case 1 (live_commit): clean order -> CLEAR TO COMMIT. Case 2 (live_escalate):
-// ambiguous request -> Qwen finds gaps -> NEEDS MORE INFO. All footage is the live dashboard
-// driving real Qwen on the deployed Alibaba FC. Close-ups punch into the element in use.
+// THREAT-FIRST. Cold-open on the danger (capability-only SHIPS a fraudulent quote), then the one
+// switch (ClarityLoop ESCALATES), the hero line, multimodal Qwen-VL, the everyday loop, the 36%->0%
+// wall, harness-independence, the 5-model Qwen router, and the close. All footage is the live dashboard
+// driving real Qwen on the deployed Alibaba FC. STEADY frames (sf == st => no zoom drift); the motion is
+// the live footage itself. clipStart (css) is a MINIMUM — consecutive same-clip beats auto-chain forward
+// (never rewind). cf_switch (46.9s) holds BOTH outcomes: gate-off stream ~12s, red SHIP verdict ~22s,
+// flip ~30s, amber ESCALATE verdict ~42s.
 const BEATS = [
-  { clip: "live_commit", css: 4, a: "agent", b: "clean", sf: 1.05, st: 1.1, ox: 50, oy: 28, dim: 0.5, blur: 2, callout: { kind: "phrase", text: "Is it safe to *ship*?", color: HI, shape: "underline" } },
-  { clip: "live_commit", css: 4, a: "clean", b: "governed", sf: 1.66, st: 1.74, ox: 28, oy: 25, dim: 0.16, annotation: { step: "01", text: "A complete order" } },
-  { clip: "live_commit", css: 31, a: "governed", b: "clears", sf: 1.58, st: 1.66, ox: 50, oy: 27, dim: 0.14, annotation: { step: "02", text: "Qwen builds the workflow" } },
-  { clip: "live_commit", css: 32, a: "clears", b: "messier", sf: 1.7, st: 1.78, ox: 50, oy: 47, dim: 0.16, annotation: { step: "03", text: "Cleared to commit" } },
-  { clip: "live_escalate", css: 4, a: "messier", b: "gaps", sf: 1.66, st: 1.74, ox: 28, oy: 25, dim: 0.16, annotation: { step: "04", text: "An ambiguous request" } },
-  { clip: "live_escalate", css: 24, a: "gaps", b: "escalates", sf: 1.58, st: 1.66, ox: 50, oy: 27, dim: 0.14, annotation: { step: "05", text: "Qwen finds the gaps" } },
-  { clip: "live_escalate", css: 24, a: "escalates", b: "promotes", sf: 1.5, st: 1.58, ox: 50, oy: 48, dim: 0.16, annotation: { step: "06", text: "Stops · escalates to a human" } },
-  { clip: "c3_promotion", css: 5, a: "promotes", b: "benchmark", sf: 1.5, st: 1.6, ox: 66, oy: 30, dim: 0.16, annotation: { step: "07", text: "Promote only if safer" } },
-  { clip: "c4_bench", css: 7, a: "benchmark", b: "attack", sf: 1.05, st: 1.12, ox: 50, oy: 30, dim: 0.52, callout: { kind: "dual", a: "36%", aSub: "capability-only", b: "0%", bSub: "clarityloop" } },
-  { clip: "c5_compose", css: 9, a: "attack", b: "function", sf: 1.06, st: 1.14, ox: 50, oy: 55, dim: 0.52, callout: { kind: "stat", big: "0%", sub: "attack success rate", color: GO, shape: "ring" } },
-  { clip: "usage", css: 1.8, a: "function", b: "_duration", sf: 1.55, st: 1.65, ox: 70, oy: 4, dim: 0.28, annotation: { step: "●", text: "Live on Alibaba Cloud · Qwen" } },
+  { bg: false, a: "agent", callout: { kind: "phrase", text: "It ships in *seconds*.", color: HI, shape: "underline" } },
+  { clip: "cf_switch", css: 7, a: "wrong", sf: 1.16, st: 1.16, ox: 48, oy: 30, dim: 0.1, annotation: { step: "01", text: "Capability-only agent · same Qwen" } },
+  { clip: "cf_switch", css: 21, a: "shipped", sf: 1.3, st: 1.3, ox: 70, oy: 30, dim: 0.1, annotation: { step: "02", text: "Shipped — no release control" } },
+  { clip: "cf_switch", css: 27, a: "change", sf: 1.16, st: 1.16, ox: 50, oy: 30, dim: 0.12, annotation: { step: "03", text: "Same request · ClarityLoop on" } },
+  { clip: "cf_switch", css: 42, a: "escalates", sf: 1.32, st: 1.32, ox: 70, oy: 28, dim: 0.1, annotation: { step: "04", text: "ClarityLoop escalates · nothing ships" } },
+  { bg: false, a: "proposes", callout: { kind: "phrase", text: "The model proposes. Code *decides*.", color: HI, shape: "underline" } },
+  { clip: "mm_parse", css: 7, a: "image", sf: 1.12, st: 1.12, ox: 50, oy: 33, dim: 0.1, annotation: { step: "05", text: "Qwen-VL reads the price sheet" } },
+  { clip: "live_commit", css: 30, a: "clean", sf: 1.3, st: 1.3, ox: 50, oy: 42, dim: 0.1, annotation: { step: "06", text: "Clean order · commits on its own" } },
+  { clip: "live_escalate", css: 31, a: "ambiguous", sf: 1.3, st: 1.3, ox: 50, oy: 42, dim: 0.1, annotation: { step: "07", text: "Ambiguous · asks, not guesses" } },
+  { clip: "c4_bench", css: 7, a: "third", sf: 1.06, st: 1.06, ox: 50, oy: 30, dim: 0.52, callout: { kind: "dual", a: "36%", aSub: "capability-only", b: "0%", bSub: "clarityloop" } },
+  { clip: "c5_compose", css: 9, a: "swap", sf: 1.08, st: 1.08, ox: 50, oy: 50, dim: 0.5, callout: { kind: "phrase", text: "Swap the model. The *gate* holds.", color: HI, shape: "underline" } },
+  { clip: "qwen_router", css: 1, a: "function", sf: 1.18, st: 1.18, ox: 50, oy: 14, dim: 0.1, annotation: { step: "●", text: "Qwen flash · plus · max · VL — routed per task" } },
+  { clip: "usage", css: 1.8, a: "job", sf: 1.4, st: 1.4, ox: 60, oy: 28, dim: 0.2, annotation: { step: "●", text: "Let the agent do the job" } },
 ];
 
 // fill any null cue by linear interpolation between known neighbours
-const order = ["agent", "clean", "governed", "clears", "messier", "gaps", "escalates", "promotes", "benchmark", "attack", "function"];
+const order = ["agent", "wrong", "shipped", "change", "escalates", "proposes", "image", "clean", "ambiguous", "third", "swap", "function", "job"];
 const known = order.filter((k) => cues[k] != null);
 if (cues.agent == null) cues.agent = 0.2;
 for (let i = 0; i < order.length; i++) {
@@ -45,19 +49,31 @@ for (let i = 0; i < order.length; i++) {
 
 const stage = (rel, file) => { if (!existsSync(join(E2E, rel, file))) throw new Error(`missing ${rel}/${file}`); copyFileSync(join(E2E, rel, file), join(PUB, rel, file)); };
 stage("audio_teaser", "teaser.wav");
-[...new Set(BEATS.map((b) => b.clip))].forEach((c) => stage("recordings", `${c}.webm`));
+[...new Set(BEATS.map((b) => b.clip).filter(Boolean))].forEach((c) => stage("recordings", `${c}.webm`));
 
 // each beat starts at its anchor minus a small lead (anticipation); duration runs to the next start
 const starts = BEATS.map((bt) => Math.max(0, cues[bt.a] - (bt.lead ?? 0.15)));
+// AUTO-CHAIN: within a run of consecutive same-clip beats, a beat's clipStart is the MAX of its
+// declared css and where the previous same-clip beat finished playing — so the footage only ever
+// advances (never rewinds => no "repeating artifact"), playing continuously when css would lag and
+// jumping forward when css is ahead. Resets whenever the clip changes (incl. through hook cards).
+const CLIP_LEN = { cf_switch: 46.88, mm_parse: 13.52, qwen_router: 9.72, live_commit: 35.88, live_escalate: 38.68, c4_bench: null, c5_compose: null, usage: null };
+let prevClip = null, prevEnd = 0;
 const shots = BEATS.map((bt, i) => {
   const start = starts[i];
   const end = i < BEATS.length - 1 ? starts[i + 1] : cues._duration;
   const from = INTRO + Math.round(start * FPS);
   const dur = Math.max(22, Math.round((end - start) * FPS));
+  const base = { from, dur, label: bt.label, callout: bt.callout, highlight: bt.highlight, annotation: bt.annotation };
+  if (bt.bg === false) { prevClip = null; return { ...base, clip: null }; }
+  const csf = bt.clip === prevClip ? Math.max(Math.round(bt.css * FPS), prevEnd) : Math.round(bt.css * FPS);
+  const len = CLIP_LEN[bt.clip];
+  if (len && (csf + dur) / FPS > len + 0.4)
+    console.warn(`  ⚠ beat ${i + 1} (${bt.clip}) plays to ${((csf + dur) / FPS).toFixed(1)}s past clip end ${len}s — will freeze`);
+  prevClip = bt.clip; prevEnd = csf + dur;
   return {
-    from, dur, clip: `recordings/${bt.clip}.webm`, clipStartFrame: Math.round(bt.css * FPS),
-    scaleFrom: bt.sf, scaleTo: bt.st, originX: bt.ox, originY: bt.oy,
-    label: bt.label, callout: bt.callout, dim: bt.dim, blur: bt.blur, highlight: bt.highlight, annotation: bt.annotation,
+    ...base, clip: `recordings/${bt.clip}.webm`, clipStartFrame: csf,
+    scaleFrom: bt.sf, scaleTo: bt.st, originX: bt.ox, originY: bt.oy, dim: bt.dim, blur: bt.blur,
   };
 });
 
@@ -68,4 +84,4 @@ writeFileSync(join(PUB, "teaser.json"), JSON.stringify(teaser, null, 2));
 
 const totalF = shots[shots.length - 1].from + shots[shots.length - 1].dur + outroFrames;
 console.log(`teaser.json · ${shots.length} shots · VO ${VO_DUR}s · total ${(totalF / FPS).toFixed(1)}s (${Math.floor(totalF / FPS / 60)}:${String(Math.round((totalF / FPS) % 60)).padStart(2, "0")})`);
-shots.forEach((s, i) => console.log(`  ${String(i + 1).padStart(2)} ${BEATS[i].clip.padEnd(13)} ${(s.dur / FPS).toFixed(1)}s  ${BEATS[i].callout ? (BEATS[i].callout.text || BEATS[i].callout.big) : (BEATS[i].label || "")}`));
+shots.forEach((s, i) => console.log(`  ${String(i + 1).padStart(2)} ${(BEATS[i].clip ?? "(hook card)").padEnd(13)} ${(s.dur / FPS).toFixed(1)}s  ${BEATS[i].callout ? (BEATS[i].callout.text || BEATS[i].callout.big) : (BEATS[i].label || "")}`));

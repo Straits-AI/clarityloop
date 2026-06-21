@@ -11,8 +11,8 @@ export type Callout =
 type ShapeKind = "brackets" | "underline" | "ring" | "slash" | "none";
 export type Box = { x: number; y: number; w: number; h: number };
 export type Shot = {
-  from: number; dur: number; clip: string; clipStartFrame: number;
-  scaleFrom: number; scaleTo: number; originX: number; originY: number;
+  from: number; dur: number; clip: string | null; clipStartFrame?: number;
+  scaleFrom?: number; scaleTo?: number; originX?: number; originY?: number;
   label?: string; callout?: Callout; dim?: number; blur?: number;
   highlight?: Box; annotation?: { step: string; text: string };
 };
@@ -252,24 +252,35 @@ const Annotation: React.FC<{ step: string; text: string; frame: number; dur: num
 function ShotView({ shot, total, globalFrom }: { shot: Shot; total: number; globalFrom: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const drift = interpolate(frame, [0, shot.dur], [shot.scaleFrom, shot.scaleTo], { extrapolateRight: "clamp" });
+  const hasBg = !!shot.clip;
+  const drift = interpolate(frame, [0, shot.dur], [shot.scaleFrom ?? 1, shot.scaleTo ?? 1], { extrapolateRight: "clamp" });
   // entrance: footage masks up from a slim band + quick amber wipe across the cut
   const reveal = interpolate(frame, [0, 12], [62, 0], { ...clamp, easing: Easing.out(Easing.cubic) });
   const wipe = interpolate(frame, [0, 9], [0, 110], { ...clamp, easing: Easing.inOut(Easing.cubic) });
   const target = shot.dim ?? 0.46;
   const dark = interpolate(frame, [0, 14], [Math.min(0.85, target + 0.3), target], clamp);
   const fblur = shot.blur ?? 0;
-  // center the focal point (originX/Y) and zoom by `drift` -> distinct close-up per element
-  const tx = -(shot.originX / 100 - 0.5) * drift * 100;
-  const ty = -(shot.originY / 100 - 0.5) * drift * 100;
+  // center the focal point (originX/Y) and zoom by `drift` -> distinct close-up per element.
+  // CLAMP the pan to what the zoom allows (±50*(drift-1)) so the scaled footage always covers the
+  // frame — otherwise an off-centre focal point (e.g. ox 70 / oy 14) translates a low-zoom shot past
+  // its own edge and exposes a black strip.
+  const maxPan = Math.max(0, 50 * (drift - 1));
+  const pan = (v: number) => Math.max(-maxPan, Math.min(maxPan, v));
+  const tx = pan(-((shot.originX ?? 50) / 100 - 0.5) * drift * 100);
+  const ty = pan(-((shot.originY ?? 50) / 100 - 0.5) * drift * 100);
   return (
     <AbsoluteFill style={{ background: INK }}>
-      <AbsoluteFill style={{ clipPath: `inset(${reveal / 2}% 0% ${reveal / 2}% 0%)` }}>
-        <AbsoluteFill style={{ transform: `translate(${tx}%, ${ty}%) scale(${drift})`, transformOrigin: "50% 50%", filter: fblur ? `blur(${fblur}px)` : undefined }}>
-          <OffthreadVideo src={staticFile(shot.clip)} startFrom={shot.clipStartFrame} muted />
+      {hasBg ? (
+        <AbsoluteFill style={{ clipPath: `inset(${reveal / 2}% 0% ${reveal / 2}% 0%)` }}>
+          <AbsoluteFill style={{ transform: `translate(${tx}%, ${ty}%) scale(${drift})`, transformOrigin: "50% 50%", filter: fblur ? `blur(${fblur}px)` : undefined }}>
+            <OffthreadVideo src={staticFile(shot.clip as string)} startFrom={shot.clipStartFrame} muted />
+          </AbsoluteFill>
+          <AbsoluteFill style={{ background: `rgba(6,8,13,${dark})` }} />
         </AbsoluteFill>
-        <AbsoluteFill style={{ background: `rgba(6,8,13,${dark})` }} />
-      </AbsoluteFill>
+      ) : (
+        // footage-less hook: clean grid/glow background (no dashboard behind the caption)
+        <AbsoluteFill style={{ background: `radial-gradient(1100px 660px at 50% 44%, rgba(245,177,61,0.10), transparent 62%), ${INK}` }} />
+      )}
       <Vignette />
       <Grain />
       <MotionLayer frame={frame} dur={shot.dur} seed={Math.round(globalFrom / 7) % 17} />

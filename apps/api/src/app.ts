@@ -16,9 +16,12 @@ import {
 } from "@clarityloop/evals";
 import type { ModelProvider } from "@clarityloop/qwen";
 import type { RunRecord, RunRepository, ProcedureVersionRepository, TraceRepository } from "@clarityloop/storage";
-import { InMemoryRunRepository } from "@clarityloop/storage";
+import { InMemoryRunRepository, InMemoryMemoryRepository, InMemoryArtifactStore } from "@clarityloop/storage";
+import { seedMemoryRepository } from "@clarityloop/tools";
 import { designWorkflow } from "./workflow-designer";
 import { LatentExtractionInputSchema, extractLatentStateStream, type LatentExtractionInput } from "./latent/extract";
+import { ExecuteInputSchema, executeRunStream } from "./execute/run";
+import { ParseDocumentInputSchema, parseDocumentStream } from "./document/parse";
 import { runLatentLoop, demoEntropySequence } from "./latent/loop";
 import { registerCommitRoutes } from "./commit-route";
 import { registerApprovalRoutes } from "./approval-route";
@@ -125,6 +128,40 @@ export function createApp(deps: AppDeps) {
             data: JSON.stringify({ step: 0, phase: "done", state: ev.state, entropy, nextBestAction: null, note: "latent state extracted and scored" }),
           });
         }
+      }
+    });
+  });
+
+  // Counterfactual execution: run the REAL next-best-action tool loop end-to-end, then either
+  // respect the deterministic commit gate (gate=on → ClarityLoop: commit only if cleared, else
+  // escalate) or ignore it (gate=off → capability-only: ship the drafted quote regardless).
+  // Same Qwen extraction + same tools + same draft both ways; the gate is the only difference.
+  // Streams: token (raw Qwen) → step (each tool firing) → verdict (committed vs escalated + draft).
+  app.post("/execute/stream", async (c) => {
+    const body = ExecuteInputSchema.safeParse(await c.req.json());
+    if (!body.success) return c.json({ error: body.error.flatten() }, 400);
+    const memory = new InMemoryMemoryRepository();
+    await seedMemoryRepository(memory); // so retrieve_memory has the seeded prior-order knowledge
+    const runtime = { memory, store: new InMemoryArtifactStore() };
+    return streamSSE(c, async (stream) => {
+      for await (const ev of executeRunStream(deps.provider, body.data, runtime)) {
+        if (ev.type === "token") await stream.writeSSE({ event: "token", data: JSON.stringify({ token: ev.token }) });
+        else if (ev.type === "step") await stream.writeSSE({ event: "step", data: JSON.stringify(ev) });
+        else await stream.writeSSE({ event: "verdict", data: JSON.stringify(ev) });
+      }
+    });
+  });
+
+  // Multimodal: stream qwen-vl-plus reading the supplier price-sheet IMAGE (sent as a real
+  // image_url content part), then emit the structured SupplierQuote it extracted from the picture.
+  app.post("/parse-document/stream", async (c) => {
+    const raw = await c.req.json().catch(() => ({}));
+    const body = ParseDocumentInputSchema.safeParse(raw);
+    if (!body.success) return c.json({ error: body.error.flatten() }, 400);
+    return streamSSE(c, async (stream) => {
+      for await (const ev of parseDocumentStream(deps.provider, body.data)) {
+        if (ev.type === "token") await stream.writeSSE({ event: "token", data: JSON.stringify({ token: ev.token }) });
+        else await stream.writeSSE({ event: "quote", data: JSON.stringify(ev.quote) });
       }
     });
   });

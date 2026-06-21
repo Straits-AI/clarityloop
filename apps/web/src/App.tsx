@@ -8,6 +8,8 @@ import { WorkflowPanel } from "./components/WorkflowPanel";
 import { NextBestAction } from "./components/NextBestAction";
 import { TraceView } from "./components/TraceView";
 import { ModelOutputPanel } from "./components/ModelOutputPanel";
+import { CounterfactualSection } from "./components/CounterfactualSection";
+import { MultimodalSection } from "./components/MultimodalSection";
 import { ReplayBenchmarkPanel } from "./components/ReplayBenchmarkPanel";
 import { VersionLineagePanel } from "./components/VersionLineagePanel";
 import { AgentDojoPanel } from "./components/AgentDojoPanel";
@@ -31,6 +33,34 @@ const HERO_STATS = [
   { v: "0.00pp", l: "entropy ablation", sub: "authorization drives safety", tone: "cyan" },
   { v: "36k", l: "attack-trials", sub: "graceful under emission corruption", tone: "go" },
 ] as const;
+
+// The actual task→model routing (packages/qwen modelForTask) — five Qwen models, one per task.
+const QWEN_ROUTES = [
+  { model: "qwen-flash", task: "latent-state extraction", note: "hot loop · cheap + fast" },
+  { model: "qwen-plus", task: "workflow generation", note: "+ audit narrative" },
+  { model: "qwen-max", task: "failure analysis", note: "deep · rare path" },
+  { model: "qwen-vl-plus", task: "document vision", note: "reads the price sheet" },
+] as const;
+
+function QwenRouter() {
+  return (
+    <section className="reveal mb-8" style={{ animationDelay: "80ms" }}>
+      <div className="mb-2.5 flex items-center gap-2">
+        <span className="eyebrow text-amber">Qwen Model Router</span>
+        <span className="data text-[10px] text-dim">routed per task · DashScope · Alibaba Function Compute</span>
+      </div>
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded border border-line bg-line lg:grid-cols-4">
+        {QWEN_ROUTES.map((r) => (
+          <div key={r.model} className="bg-ink-850 px-4 py-3">
+            <div className="data text-[13px] text-hi">{r.model}</div>
+            <div className="eyebrow mt-1.5 text-body">{r.task}</div>
+            <div className="mt-0.5 text-[10.5px] text-dim">{r.note}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function SectionHeader({ index, title, blurb }: { index: string; title: string; blurb?: React.ReactNode }) {
   return (
@@ -124,6 +154,8 @@ export default function App() {
         </div>
       </header>
 
+      <QwenRouter />
+
       {/* ── hero ───────────────────────────────────────────────────────── */}
       <section className="reveal mb-7" style={{ animationDelay: "60ms" }}>
         <p className="eyebrow mb-3 text-amber">Track 4 · Autopilot Agent</p>
@@ -154,6 +186,16 @@ export default function App() {
           ))}
         </div>
       </section>
+
+      {/* ── 0 · counterfactual: with vs without the gate ───────────────── */}
+      <div className="reveal mb-10 mt-12" style={{ animationDelay: "100ms" }}>
+        <CounterfactualSection apiBase={API_BASE} />
+      </div>
+
+      {/* ── 0b · multimodal: qwen-vl-plus reads the price-sheet image ────── */}
+      <div className="reveal mb-10" style={{ animationDelay: "110ms" }}>
+        <MultimodalSection apiBase={API_BASE} />
+      </div>
 
       {/* ── I · live loop ──────────────────────────────────────────────── */}
       <section className="reveal mb-10 mt-12" style={{ animationDelay: "120ms" }}>

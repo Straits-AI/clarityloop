@@ -9,7 +9,7 @@
     "dev": "tsx watch src/server.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build:fc": "esbuild src/server-fc.ts --bundle --platform=node --target=node20 --format=cjs --outfile=fc-dist/index.cjs --external:pg-native && printf '#!/bin/bash\\nexec node index.cjs\\n' > fc-dist/bootstrap && chmod +x fc-dist/bootstrap && cd fc-dist && rm -f clarityloop-fc.zip && zip -q clarityloop-fc.zip bootstrap index.cjs"
+    "build:fc": "pnpm --filter @clarityloop/web build && esbuild src/server-fc.ts --bundle --platform=node --target=node20 --format=cjs --outfile=fc-dist/index.cjs --external:pg-native && printf '#!/bin/bash\\nexec node index.cjs\\n' > fc-dist/bootstrap && chmod +x fc-dist/bootstrap && rm -rf fc-dist/web && cp -r ../web/dist fc-dist/web && cd fc-dist && rm -f clarityloop-fc.zip && zip -qr clarityloop-fc.zip bootstrap index.cjs web"
   },
   "dependencies": {
     "@clarityloop/core": "workspace:*",

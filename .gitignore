@@ -27,3 +27,7 @@ test-results/
 playwright-report/
 apps/web/e2e/audio_teaser/
 apps/web/e2e/narration_teaser.json
+
+# python cache + scratch probe output
+**/__pycache__/
+apps/web/e2e/realcase/
